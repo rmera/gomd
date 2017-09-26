@@ -78,6 +78,8 @@ func main() {
 		f = Ramachandran(mol, args[3:])
 	} else if task == "ClosestN" {
 		f = ClosestN(mol, args[3:])
+	} else if task=="WithinCutoff"{
+		f = WithinCutoff(mol,args[3:])
 	} else {
 		fmt.Println("Args:", args)
 		panic("Task parameter invalid or not present" + args[0])
@@ -88,7 +90,7 @@ func main() {
 /********General helper functions************/
 
 func centerOfMass(coord, temp *v3.Matrix, mol *chem.Molecule, indexes []int) (*v3.Matrix, error) {
-	top := chem.NewTopology(nil, 0, 1) //there is an goChem API change comming that will affect this call
+	top := chem.NewTopology(0, 1) //there is an goChem API change comming that will affect this call
 	//	println("Fuck you aaashooole")
 	top.SomeAtoms(mol, indexes)
 	temp.SomeVecs(coord, indexes)
@@ -182,7 +184,6 @@ func sel2atoms(mol chem.Atomer, sel string) ([]int, error) {
 		fields[2] = fields[2][1:] //gotta check if I can do this and if the slicing is correct.
 	}
 	atnames := strings.Split(fields[2], ",")
-	//	fmt.Println("atnames",atnames) ////////////////////
 	ret := make([]int, 0, len(reslist)*4)
 	for i := 0; i < mol.Len(); i++ {
 		at := mol.Atom(i)
@@ -196,7 +197,7 @@ func sel2atoms(mol chem.Atomer, sel string) ([]int, error) {
 		}
 		ret = append(ret, i)
 	}
-	//We pick the atoms not present in ret. Better not to use this, really.
+	//We pick the atoms not present in ret. This is not working yet, so don't use it or included it in the documentation.
 	if negnames {
 		//ret are assumed to be sorted, which should be the case.
 		ret2 := make([]int, 0, mol.Len()-len(ret))

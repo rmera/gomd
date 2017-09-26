@@ -41,6 +41,29 @@ func ClosestN(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64{
 	return ret
 }
 
+
+//returns a 1-member slice with the number of residues of the types specified of the selection found withint the given cutoff
+func WithinCutoff(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64{
+//	println("Hello from ClosestN!")
+	argslen := len(args)
+	if (argslen)<3 {
+		panic("WithinCutoff: Need at least two arguments")
+	}
+	cutoff,err:=strconv.ParseFloat(args[2],64)
+	if err!=nil{
+		panic("WithinCutoff: "+err.Error())
+	}
+	refindexes,residues,com:=resRankInput(mol,args)
+	ret:= func(coord *v3.Matrix) []float64{
+		ranked:=distRank(coord, mol, refindexes, residues, cutoff, com)
+		fmt.Println(ranked)////////////////////////
+		return  []float64{float64(len(ranked))}
+	}
+	return ret
+}
+
+
+
 func resRankInput(mol *chem.Molecule, args []string)([]int, []string,bool){
 	//	fmt.Println("Use: MDan distance sel1 sel2...")
 	var err error
@@ -94,7 +117,7 @@ func distRank(coord *v3.Matrix, mol *chem.Molecule, refindexes []int, residues [
 	if cutoff<0{
 		cutoff=15  //if a negative cutoff is given we use 15 A as the default.
 	}
-	chunk:=chem.NewTopology(nil,0,1)
+	chunk:=chem.NewTopology(0,1)
 	for i:=0;i<mol.Len();i++{
 		at:=mol.Atom(i)
 		molname=at.Molname

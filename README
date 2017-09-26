@@ -51,6 +51,14 @@ Gopher MD can perform several tasks, and it is build so the implementation of ne
 	
 	Where N is an even number. The distances between selections 1 and 2, ... N-1 and N for each frame will be printed to stdout. If a selection has more than one atom, the center of mass for that selection is used.
 
+Selections: 
+
+The selections are defined in the following way: "RESID1,RESID2,RESID3-RESID3+N,RESIDN CHAIN ATNAME1,ATNAME2"
+RESID are residue numbers. They can be separated by commas or, to specify a range, with dashes: 12,13,120,125-128,145  The former would select the residues 12,13,120,125,126,127,128,145
+CHAIN must be a chain identifier such as "A". If chain is "ALL", every chain will be used.
+ATNAME is a PDB atom name such as CA (alpha carbon). Hydrogen names may vary with the forcefield employed. if ALL is given, as the first atom name, all atoms in the selected residues will be consiered.
+
+
 
 
 GopherMD, a little program for the analysis of molecular dynamics simulations.
