@@ -14,6 +14,7 @@ import(
 //ClosestN mol  "ref selection" "residue list" N
 
 func ClosestN(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64{
+//	chem.FixGromacsPDB(mol)
 //	println("Hello from ClosestN!")
 	argslen := len(args)
 	if (argslen)<3 {
@@ -29,7 +30,6 @@ func ClosestN(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64{
 		retSlice:=make([]float64,0,N)
 		ranked:=distRank(coord, mol, refindexes, residues, cutoff, com)
 		sort.Sort(MolDistList(ranked)) //possible bottleneck
-	//	fmt.Println(ranked) ////////////////////////////////////////////////////////////////
 		if len(ranked)< N{ //This shouldn't happen, but better have that.
 			N=len(ranked)
 		}
@@ -44,6 +44,7 @@ func ClosestN(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64{
 
 //returns a 1-member slice with the number of residues of the types specified of the selection found withint the given cutoff
 func WithinCutoff(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64{
+//	chem.FixGromacsPDB(mol)
 //	println("Hello from ClosestN!")
 	argslen := len(args)
 	if (argslen)<3 {
@@ -56,7 +57,7 @@ func WithinCutoff(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64{
 	refindexes,residues,com:=resRankInput(mol,args)
 	ret:= func(coord *v3.Matrix) []float64{
 		ranked:=distRank(coord, mol, refindexes, residues, cutoff, com)
-		fmt.Println(ranked)////////////////////////
+	//	fmt.Println(ranked)////////////////////////
 		return  []float64{float64(len(ranked))}
 	}
 	return ret
@@ -81,28 +82,48 @@ func resRankInput(mol *chem.Molecule, args []string)([]int, []string,bool){
 	return refindex, residues, com
 }
 
+
+
+type resAndChain struct{
+	ResID int
+	Chain string
+}
+
+
+
 //returns all the residue numbers in mold covered by indexes
-func allResIDs(mol chem.Atomer, indexes []int) []int{
-	ret:=make([]int,0,2)
+func allResIDandChains(mol chem.Atomer, indexes []int) []*resAndChain{
+	ret:=make([]*resAndChain,0,2)
 	for _,i:=range(indexes){
 		at:=mol.Atom(i)
-		if !scu.IsInInt(at.MolID,ret){
-			ret=append(ret,at.MolID)
+		if !repeated(at.MolID,at.Chain,ret){
+			ret=append(ret,&resAndChain{ResID:at.MolID,Chain:at.Chain})
 		}
 	}
 	return ret
 }
 
+func repeated(id int, chain string, rac []*resAndChain) bool{
+	for _,v:=range(rac){
+		if v.Chain==chain && id == v.ResID{
+			return true
+		}
+	}
+	return false
+}
+
+
 func distRank(coord *v3.Matrix, mol *chem.Molecule, refindexes []int, residues []string, cutoff float64, com bool) []*MolDist {
 	ranks := make([]*MolDist,0,30)
-	resIDs:=make([]int,0,30)
+	resIDs:=make([]*resAndChain,0,30)
 	var molname string
 	var id int
+	var chain string
 	var dist float64
 	var err error
 	water:=v3.Zeros(3)
 	var ref *v3.Matrix
-	ownresIDs:=allResIDs(mol,refindexes) //We could call this upstream and just get this numbers, but I suspect
+	ownresIDs:=allResIDandChains(mol,refindexes) //We could call this upstream and just get this numbers, but I suspect
 	//it doesn't make much difference and the function already has lots of parameters. Something that can be improved if
 	//the program is slow.
 	if len(refindexes)==1 { //no center of mass
@@ -118,12 +139,14 @@ func distRank(coord *v3.Matrix, mol *chem.Molecule, refindexes []int, residues [
 		cutoff=15  //if a negative cutoff is given we use 15 A as the default.
 	}
 	chunk:=chem.NewTopology(0,1)
+//	fmt.Println(chunk)////////////////
 	for i:=0;i<mol.Len();i++{
 		at:=mol.Atom(i)
 		molname=at.Molname
 		id=at.MolID
+		chain=at.Chain
 		var test *v3.Matrix
-		if scu.IsInString(molname,residues) && !scu.IsInInt(id,resIDs) && !scu.IsInInt(id,ownresIDs){      ////////////////////////////////
+		if scu.IsInString(molname,residues) && !repeated(id,chain,resIDs) && !repeated(id,chain,ownresIDs){      ////////////////////////////////
 		//	fmt.Println(molname, residues)///////////////////////////////////////
 			expectedreslen:=6
 			indexes:=make([]int,1,expectedreslen)
@@ -148,7 +171,7 @@ func distRank(coord *v3.Matrix, mol *chem.Molecule, refindexes []int, residues [
 			dist=molDist(test,ref,chunk,com)
 			if dist<=cutoff{
 				ranks=append(ranks,&MolDist{Distance:dist,MolID:id})
-				resIDs=append(resIDs,id)
+				resIDs=append(resIDs,&resAndChain{ResID:id,Chain:chain})
 		//		break //////////////////////////////////////////////////////////////////////////
 			}
 		}

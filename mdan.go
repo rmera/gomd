@@ -53,15 +53,19 @@ import (
 func main() {
 	//The skip options
 	skip := flag.Int("skip", 0, "How many frames to skip between reads.")
-	begin := flag.Int("begin", 1, "The frame from whre to start reading.")
-
+	begin := flag.Int("begin", 1, "The frame from where to start reading.")
+	fixGromacs:=flag.Bool("fixGMX",false,"Gromacs PDB numbering issue with more than 10000 residues will be fixed and a new PDB written")
 	flag.Parse()
 	args := flag.Args()
-	println("SKIP", *skip, *begin, args) ///////////////////////////
+//	println("SKIP", *skip, *begin, args) ///////////////////////////
 	var f func(*v3.Matrix) []float64
 	mol, err := chem.PDBFileRead(args[1], false)
 	if err != nil {
 		panic(err.Error())
+	}
+	if *fixGromacs{
+		chem.FixGromacsPDB(mol)
+		chem.PDBFileWrite("Fixed"+args[1],mol.Coords[0],mol,nil)
 	}
 	//It's trivial to read dcd also.
 	traj, err := xtc.New(args[2])
