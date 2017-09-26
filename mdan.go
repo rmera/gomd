@@ -44,7 +44,7 @@ import (
 	"github.com/rmera/scu"
 	"gonum.org/v1/gonum/mat"
 	"math"
-	"sort"
+	//	"sort"
 	"strconv"
 	"strings"
 )
@@ -54,18 +54,18 @@ func main() {
 	//The skip options
 	skip := flag.Int("skip", 0, "How many frames to skip between reads.")
 	begin := flag.Int("begin", 1, "The frame from where to start reading.")
-	fixGromacs:=flag.Bool("fixGMX",false,"Gromacs PDB numbering issue with more than 10000 residues will be fixed and a new PDB written")
+	fixGromacs := flag.Bool("fixGMX", false, "Gromacs PDB numbering issue with more than 10000 residues will be fixed and a new PDB written")
 	flag.Parse()
 	args := flag.Args()
-//	println("SKIP", *skip, *begin, args) ///////////////////////////
+	//	println("SKIP", *skip, *begin, args) ///////////////////////////
 	var f func(*v3.Matrix) []float64
 	mol, err := chem.PDBFileRead(args[1], false)
 	if err != nil {
 		panic(err.Error())
 	}
-	if *fixGromacs{
+	if *fixGromacs {
 		chem.FixGromacsPDB(mol)
-		chem.PDBFileWrite("Fixed"+args[1],mol.Coords[0],mol,nil)
+		chem.PDBFileWrite("Fixed"+args[1], mol.Coords[0], mol, nil)
 	}
 	//It's trivial to read dcd also.
 	traj, err := xtc.New(args[2])
@@ -82,8 +82,8 @@ func main() {
 		f = Ramachandran(mol, args[3:])
 	} else if task == "ClosestN" {
 		f = ClosestN(mol, args[3:])
-	} else if task=="WithinCutoff"{
-		f = WithinCutoff(mol,args[3:])
+	} else if task == "WithinCutoff" {
+		f = WithinCutoff(mol, args[3:])
 	} else {
 		fmt.Println("Args:", args)
 		panic("Task parameter invalid or not present" + args[0])
@@ -103,8 +103,9 @@ func centerOfMass(coord, temp *v3.Matrix, mol *chem.Molecule, indexes []int) (*v
 		return nil, err
 	}
 	//	println("Fuck YOU ashole!")
+	//	fmt.Println(temp,indexes,mass) //////////////////
 	ret, err := centerOfMassII(temp, mat.NewDense(len(indexes), 1, mass))
-	//	fmt.Println("atoms,vecs,masses, com",top,temp,mass,ret) ///////////////////////////
+	//	fmt.Println("com!!",ret, temp, mass,indexes) ///////////////////////////
 	return ret, err
 }
 
@@ -123,6 +124,7 @@ func centerOfMassII(geometry *v3.Matrix, mass *mat.Dense) (*v3.Matrix, error) {
 	gnOnesvector := mat.NewDense(1, gr, tmp2)
 	ref := v3.Zeros(gr)
 	ref.ScaleByCol(geometry, mass)
+	//	fmt.Println("ref", ref) ///////////////////
 	ref2 := v3.Zeros(1)
 	ref2.Mul(gnOnesvector, ref)
 	ref2.Scale(1.0/mat.Sum(mass), ref2)
@@ -182,11 +184,13 @@ func sel2atoms(mol chem.Atomer, sel string) ([]int, error) {
 	//we get the chain:
 	chain := fields[1]
 	//Now we go for the atomslist and chain
-	negnames := false
-	if strings.HasPrefix(fields[2], "!") {
-		negnames = true
-		fields[2] = fields[2][1:] //gotta check if I can do this and if the slicing is correct.
-	}
+	/*
+		negnames := false
+		if strings.HasPrefix(fields[2], "!") {
+			negnames = true
+			fields[2] = fields[2][1:] //gotta check if I can do this and if the slicing is correct.
+		}
+	*/
 	atnames := strings.Split(fields[2], ",")
 	ret := make([]int, 0, len(reslist)*4)
 	for i := 0; i < mol.Len(); i++ {
@@ -200,24 +204,27 @@ func sel2atoms(mol chem.Atomer, sel string) ([]int, error) {
 			continue
 		}
 		ret = append(ret, i)
+		//		fmt.Println(ret)
 	}
 	//We pick the atoms not present in ret. This is not working yet, so don't use it or included it in the documentation.
-	if negnames {
-		//ret are assumed to be sorted, which should be the case.
-		ret2 := make([]int, 0, mol.Len()-len(ret))
-		bs := 0 //where to begin the search in the ret string, i.e. the last index matched or tested.
-		for i := 0; i < mol.Len(); i++ {
-			if scu.IsInInt(i, ret[bs:]) {
-				bs = i
-				continue
-			}
-			bst := sort.SearchInts(ret[bs:], i)
-			bs = bst + bs - 1 //the -1 is just in case I messed up to ensure we don't miss any index
-			ret2 = append(ret2, i)
+	/*
+		if negnames {
+			//ret are assumed to be sorted, which should be the case.
+			ret2 := make([]int, 0, mol.Len()-len(ret))
+			bs := 0 //where to begin the search in the ret string, i.e. the last index matched or tested.
+			for i := 0; i < mol.Len(); i++ {
+				if scu.IsInInt(i, ret[bs:]) {
+					bs = i
+					continue
+				}
+				bst := sort.SearchInts(ret[bs:], i)
+				bs = bst + bs - 1 //the -1 is just in case I messed up to ensure we don't miss any index
+				ret2 = append(ret2, i)
 
+			}
+			return ret2, nil
 		}
-		return ret2, nil
-	}
+	*/
 	return ret, nil
 }
 
@@ -310,9 +317,11 @@ func Distance(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 	var vec1, vec2 *v3.Matrix
 	distvec := v3.Zeros(1) //the distance vector
 	var err error
+	//	fmt.Println(com) ////////////////////////////////////
 	ret := func(coord *v3.Matrix) []float64 {
 		distances := make([]float64, 0, len(indexes)/2)
 		for i := 0; i < len(indexes); i = i + 2 { //we process them by pairs
+			//		fmt.Println("com", i/2, com[i/2]) ///////////////////////////////////)
 			if com[i/2] == false { //no center of mass indication, we assume taht each selection has one atom
 				vec1 = coord.VecView(indexes[i][0])
 				vec2 = coord.VecView(indexes[i+1][0])
@@ -328,6 +337,7 @@ func Distance(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 				if err != nil {
 					panic("Distance: Func: " + err.Error())
 				}
+				//			fmt.Println("Vectors",vec1, vec2)   ////////////////////
 			}
 			//			fmt.Println(vec2, vec1) /////////////////////////////////////////////
 			distvec.Sub(vec2, vec1)
@@ -348,7 +358,7 @@ func mdan(traj chem.Traj, f func(*v3.Matrix) []float64, skip, begin int) {
 	var coords *v3.Matrix
 	lastread := -1
 	for i := 0; ; i++ { //infinite loop, we only break out of it by using "break"  //modified for profiling
-		if lastread < 0 ||( i >= lastread+skip && i>=begin-1) {
+		if lastread < 0 || (i >= lastread+skip && i >= begin-1) {
 			coords = v3.Zeros(traj.Len())
 		}
 		err := traj.Next(coords) //Obtain the next frame of the trajectory.
@@ -361,7 +371,7 @@ func mdan(traj chem.Traj, f func(*v3.Matrix) []float64, skip, begin int) {
 				panic(err.Error)
 			}
 		}
-		if (lastread >= 0 && i < lastread+skip) || i<begin-1 { //not so nice check for this twice
+		if (lastread >= 0 && i < lastread+skip) || i < begin-1 { //not so nice check for this twice
 			continue
 		}
 		lastread = i
@@ -374,7 +384,7 @@ func mdan(traj chem.Traj, f func(*v3.Matrix) []float64, skip, begin int) {
 		}
 		str := strings.Join(fields, " ")
 		fmt.Print(str + "\n")
-		coords=nil // Not sure this works
+		coords = nil // Not sure this works
 	}
 
 }

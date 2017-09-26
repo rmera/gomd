@@ -45,6 +45,12 @@ Gopher MD can perform several tasks, and it is build so the implementation of ne
 
 	Where N is a positive integer. Residue names are given in 3 letter format (ASP, HIS, etc). The name for the water molecules will vary with the force-field used (SOL, HOH, WAT, etc). Distances of a residue with itself will not be considered. If --COM is given, the center of mass of the residues will be used.   
 
+***WithinCutoff: Similar to the previous but returns the number of residues of the type residuename1 or residuename2, etc within R Angstroms of selection in each frame.
+
+	./gomd [-skip=X -begin=Y] WhithinCutoff pdbname xtcname "selection" "residuename1 residuename2 residuenameM" R [--COM]
+
+	Where R is a positive float. The rest of the syntax is equivalent to that for ClosestN.
+
 ***Distance: Plots the distance between pairs of selections for each frame of the trajectory. 
 
 	./gomd [-skip=X -begin=Y] Distance pdbname xtcname "selection1" "selection2" ... "selectionN" 
