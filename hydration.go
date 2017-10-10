@@ -57,19 +57,16 @@ func WithinCutoff(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 
 	_=com //should fix this
 	ret := func(coord *v3.Matrix) []float64 {
 		ranked := distRank(coord, mol, refindexes, residues, cutoff)
-		//	fmt.Println(ranked)////////////////////////
 		return []float64{float64(len(ranked))}
 	}
 	return ret
 }
 
 func resRankInput(mol *chem.Molecule, args []string) ([]int, []string, bool) {
-	//	fmt.Println("Use: MDan distance sel1 sel2...")
 	var err error
 	//first we get the reference position from the first selection. If the selection has one atom
 	//it is used, otherwise,
 	refindex, err := sel2atoms(mol, args[0])
-	fmt.Println("selection and refindexes read", refindex, args[0])
 	if err != nil {
 		panic("resRankInput: sel2atoms:" + err.Error())
 	}
@@ -163,7 +160,6 @@ func distRank(coord *v3.Matrix, mol *chem.Molecule, refindexes []int, residues [
 			}
 		}
 	}
-//	fmt.Println(ranks) ///////
 	return ranks
 
 }
