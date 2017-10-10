@@ -5,7 +5,6 @@ import (
 	"github.com/rmera/gochem"
 	"github.com/rmera/gochem/v3"
 	"github.com/rmera/scu"
-	"gonum.org/v1/gonum/mat"
 	"sort"
 	"strconv"
 	"strings"
@@ -25,10 +24,11 @@ func ClosestN(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 		panic("ClosestN: " + err.Error())
 	}
 	refindexes, residues, com := resRankInput(mol, args)
+	_=com ////////gotta fix this
 	cutoff := 15.0 //We assume that N will be small enough that we won't go over 15 A. One can always change it, though.
 	ret := func(coord *v3.Matrix) []float64 {
 		retSlice := make([]float64, 0, N)
-		ranked := distRank(coord, mol, refindexes, residues, cutoff, com)
+		ranked := distRank(coord, mol, refindexes, residues, cutoff)
 		sort.Sort(MolDistList(ranked)) //possible bottleneck
 		if len(ranked) < N {           //This shouldn't happen, but better have that.
 			N = len(ranked)
@@ -54,8 +54,9 @@ func WithinCutoff(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 
 		panic("WithinCutoff: " + err.Error())
 	}
 	refindexes, residues, com := resRankInput(mol, args)
+	_=com //should fix this
 	ret := func(coord *v3.Matrix) []float64 {
-		ranked := distRank(coord, mol, refindexes, residues, cutoff, com)
+		ranked := distRank(coord, mol, refindexes, residues, cutoff)
 		//	fmt.Println(ranked)////////////////////////
 		return []float64{float64(len(ranked))}
 	}
@@ -68,6 +69,7 @@ func resRankInput(mol *chem.Molecule, args []string) ([]int, []string, bool) {
 	//first we get the reference position from the first selection. If the selection has one atom
 	//it is used, otherwise,
 	refindex, err := sel2atoms(mol, args[0])
+	fmt.Println("selection and refindexes read", refindex, args[0])
 	if err != nil {
 		panic("resRankInput: sel2atoms:" + err.Error())
 	}
@@ -105,51 +107,47 @@ func repeated(id int, chain string, rac []*resAndChain) bool {
 	return false
 }
 
-func distRank(coord *v3.Matrix, mol *chem.Molecule, refindexes []int, residues []string, cutoff float64, com bool) []*MolDist {
+
+func distRank(coord *v3.Matrix, mol *chem.Molecule, refindexes []int, residues []string, cutoff float64) []*MolDist {
 	ranks := make([]*MolDist, 0, 30)
-	resIDs := make([]*resAndChain, 0, 30)
+//	resIDs := make([]*resAndChain, 0, 30)
 	var molname string
-	var id int
-	var chain string
-	var dist float64
-	var err error
+	var id, molid_skip int //The "skip" variables keep the residue just being read or discarded to avoid reading a residue twice.
+	molid_skip=-1
+	var chain,chain_skip string
+	var distance float64
 	water := v3.Zeros(3)
 	var ref *v3.Matrix
 	ownresIDs := allResIDandChains(mol, refindexes) //We could call this upstream and just get this numbers, but I suspect
-	//it doesn't make much difference and the function already has lots of parameters. Something that can be improved if
-	//the program is slow.
-	if len(refindexes) == 1 { //no center of mass
-		ref = coord.VecView(refindexes[0])
-	} else {
-		t1 := v3.Zeros(len(refindexes))
-		ref, err = centerOfMass(coord, t1, mol, refindexes)
-		if err != nil {
-			panic("Distance: Func: " + err.Error())
-		}
-	}
+	ref=v3.Zeros(len(refindexes))
+	ref.SomeVecs(coord,refindexes)
 	if cutoff < 0 {
-		cutoff = 15 //if a negative cutoff is given we use 15 A as the default.
+		cutoff = 10 //if a negative cutoff is given we use 10 A as the default.
 	}
+	cutoffplus:=cutoff+2
 	chunk := chem.NewTopology(0, 1)
-	//	fmt.Println(chunk)////////////////
+	tmp:=v3.Zeros(1)
 	for i := 0; i < mol.Len(); i++ {
 		at := mol.Atom(i)
 		molname = at.Molname
 		id = at.MolID
 		chain = at.Chain
 		var test *v3.Matrix
-		if scu.IsInString(molname, residues) && !repeated(id, chain, resIDs) && !repeated(id, chain, ownresIDs) { ////////////////////////////////
-			//	fmt.Println(molname, residues)///////////////////////////////////////
+		//a little pre-screening for waters
+		if scu.IsInString(molname,[]string{"SOL","WAT","HOH"}) && dist(ref.VecView(0),coord.VecView(i),tmp)>cutoffplus{
+			continue
+
+		}
+		if scu.IsInString(molname, residues) && !repeated(id, chain, ownresIDs) && (id!=molid_skip || chain !=chain_skip) {
 			expectedreslen := 6
 			indexes := make([]int, 1, expectedreslen)
 			indexes[0] = i
-			for j := i; j < i+80; j++ {
+			for j := i+1; j < i+80; j++ {
 				at2 := mol.Atom(j)
 				if at2.MolID != id {
 					break
 				}
 				indexes = append(indexes, j)
-				//	println("indexes res",id, j) ///////////////////////////////////
 			}
 			if len(indexes) == 3 {
 				test = water
@@ -157,21 +155,21 @@ func distRank(coord *v3.Matrix, mol *chem.Molecule, refindexes []int, residues [
 				test = v3.Zeros(len(indexes))
 			}
 			test.SomeVecs(coord, indexes)
-			if com {
-				chunk.SomeAtoms(mol, indexes)
-			}
-			dist = molDist(test, ref, chunk, com)
-			if dist <= cutoff {
-				ranks = append(ranks, &MolDist{Distance: dist, MolID: id})
-				resIDs = append(resIDs, &resAndChain{ResID: id, Chain: chain})
-				//		break //////////////////////////////////////////////////////////////////////////
+			distance = molDist(test, ref, chunk)
+			if distance <= cutoff {
+				ranks = append(ranks, &MolDist{Distance: distance, MolID: id})
+				molid_skip=id
+				chain_skip=chain
 			}
 		}
 	}
-	//	fmt.Println("NO WEI", len(resIDs), ranks) ///////////////////////////////////////////////////////////////////////
+//	fmt.Println(ranks) ///////
 	return ranks
 
 }
+
+
+
 
 type MolDist struct {
 	Distance float64
@@ -194,35 +192,26 @@ func (M MolDistList) Len() int {
 	return len(M)
 }
 
-func molDist(test, ref *v3.Matrix, mol chem.Masser, com bool) float64 {
+
+func molDist(test, ref *v3.Matrix, mol chem.Masser) float64 {
 	temp := v3.Zeros(1)
-	//	println("Call me!") /////////////
-	if !com {
-		var d1, dclosest float64
-		var v1, vclosest *v3.Matrix
-		vclosest = test.VecView(0)
-		dclosest = dist(ref, vclosest, temp)
-		for i := 1; i < test.NVecs(); i++ {
-			v1 = test.VecView(i)
-			d1 = dist(ref, v1, temp)
-			//			fmt.Println(vclosest,v1,dclosest,d1)////////////////////////////
-			if d1 < dclosest {
-				vclosest = test.VecView(i)
-				dclosest = d1
+	var d1, dclosest float64
+	var vt1, vr1  *v3.Matrix // vtclosest,vr1, vrclosest *v3.Matrix
+	dclosest = dist(ref.VecView(0), test.VecView(0), temp)
+	for i := 1; i < test.NVecs(); i++ {  //This will fail if the test residues have only one atom.
+			vt1 = test.VecView(i)
+			for j:=0;j<ref.NVecs();j++{
+				vr1 = ref.VecView(j)
+				d1 = dist(vr1, vt1, temp)
+				if d1 < dclosest {
+					dclosest = d1
 			}
 		}
+	}
 		return dclosest
-	}
-	mass, err := mol.Masses()
-	if err != nil {
-		panic("molDist: " + err.Error())
-	}
-	comass, err := centerOfMassII(test, mat.NewDense(test.NVecs(), 1, mass))
-	if err != nil {
-		panic("molDist: " + err.Error())
-	}
-	return dist(ref, comass, temp)
 }
+
+
 
 func dist(r, t, temp *v3.Matrix) float64 {
 	temp.Sub(r, t)

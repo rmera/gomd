@@ -41,13 +41,13 @@ Gopher MD can perform several tasks, and it is build so the implementation of ne
 
 ***ClosestN: Given a selection, plots the distances for the closest N of an also given list of residue names to the selection, for each frame.
 
-	./gomd [-skip=X -begin=Y] ClosestN pdbname xtcname "selection" "residuename1 residuename2 residuenameM" N [--COM]
+	./gomd [-skip=X -begin=Y] ClosestN pdbname xtcname "selection" "residuename1 residuename2 residuenameM" N
 
-	Where N is a positive integer. Residue names are given in 3 letter format (ASP, HIS, etc). The name for the water molecules will vary with the force-field used (SOL, HOH, WAT, etc). Distances of a residue with itself will not be considered. If --COM is given, the center of mass of the residues will be used.   
+	Where N is a positive integer. Residue names are given in 3 letter format (ASP, HIS, etc). The name for the water molecules will vary with the force-field used (SOL, HOH, WAT, etc). Distances of a residue with itself will not be considered.   
 
 ***WithinCutoff: Similar to the previous but returns the number of residues of the type residuename1 or residuename2, etc within R Angstroms of selection in each frame.
 
-	./gomd [-skip=X -begin=Y] WhithinCutoff pdbname xtcname "selection" "residuename1 residuename2 residuenameM" R [--COM]
+	./gomd [-skip=X -begin=Y] WhithinCutoff pdbname xtcname "selection" "residuename1 residuename2 residuenameM" R
 
 	Where R is a positive float. The rest of the syntax is equivalent to that for ClosestN.
 
