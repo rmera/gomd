@@ -9,6 +9,19 @@ import sys
 fname=sys.argv[1]
 tbf=float(sys.argv[2]) #time between frames
 columns=int(sys.argv[3]) #not counting the first one (frame number)
+prop="Property"
+
+#if you don't want to tag the different numbers, just give a "" in this option.
+
+tagsstring=sys.argv[4]
+tags=[]
+if tagsstring=="":
+    for i in range(columns):
+        tags.append("Prop. "+str(i+1))
+else:
+    prop=tagsstring.split()[0]
+    tags=tagsstring.split()[1:]
+
 toplot=-1
 if "--onlyplot" in sys.argv:
     toplot=int(sys.argv[-1])
@@ -65,7 +78,7 @@ d = c[::-1]
 fig, ax = plt.subplots()
 
 plt.xlabel('time/frame number')
-plt.ylabel('Property')
+plt.ylabel(prop)
 if hist:
     plt.xlabel("Property")
     plt.ylabel("Population")
@@ -78,14 +91,13 @@ for i,y in enumerate(ys):
         x2=x[ac:]
     if hist:
         print(len(x),len(y))
-        plt.hist(y,bins="auto",histtype="step",label="Prop. "+str(i+1),cumulative=cdf,normed=density)
+        plt.hist(y,bins="auto",histtype="step",label=tags[i],cumulative=cdf,normed=density)
         continue
-    ax.plot(x2,y,glyphs[i],label="Prop. "+str(i+1))
+    ax.plot(x2,y,glyphs[i],label=tags[i])
 
 ax.legend(loc='right')
 
 
 plt.show()
-
 
 
