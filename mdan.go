@@ -38,7 +38,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	"github.com/rmera/gochem"
+	"github.com/rmera/gochem/amberold"
+	"github.com/rmera/gochem/dcd"
 	"github.com/rmera/gochem/v3"
 	"github.com/rmera/gochem/xtc"
 	"github.com/rmera/scu"
@@ -55,6 +58,7 @@ func main() {
 	skip := flag.Int("skip", 0, "How many frames to skip between reads.")
 	begin := flag.Int("begin", 1, "The frame from where to start reading.")
 	fixGromacs := flag.Bool("fixGMX", false, "Gromacs PDB numbering issue with more than 10000 residues will be fixed and a new PDB written")
+	format := flag.Int("format", 0, "0 for xtc (default), 1 for OldAmber (crd), 2 for dcd (NAMD)")
 	flag.Parse()
 	args := flag.Args()
 	//	println("SKIP", *skip, *begin, args) ///////////////////////////
@@ -67,12 +71,24 @@ func main() {
 		chem.FixGromacsPDB(mol)
 		chem.PDBFileWrite("Fixed"+args[1], mol.Coords[0], mol, nil)
 	}
-	//It's trivial to read dcd also.
-	traj, err := xtc.New(args[2])
-	if err != nil {
-		panic(err.Error())
+	var traj chem.Traj
+	switch *format {
+	case 0:
+		traj, err = xtc.New(args[2])
+		if err != nil {
+			panic(err.Error())
+		}
+	case 1:
+		traj, err = amberold.New(args[2],mol.Len())
+		if err != nil {
+			panic(err.Error())
+		}
+	case 2:
+		traj, err = dcd.New(args[2])
+		if err != nil {
+			panic(err.Error())
+		}
 	}
-
 	task := args[0]
 	if task == "Distance" {
 		f = Distance(mol, args[3:])
@@ -82,6 +98,8 @@ func main() {
 		f = Ramachandran(mol, args[3:])
 	} else if task == "ClosestN" {
 		f = ClosestN(mol, args[3:])
+	} else if task == "RMSF" {
+		f = RMSF(mol, args[3:])
 	} else if task == "WithinCutoff" {
 		f = WithinCutoff(mol, args[3:])
 	} else {
@@ -288,6 +306,83 @@ func memRMSD(ctest, ctempla, tmp *v3.Matrix) (float64, error) {
 	return rmsd / math.Sqrt(float64(ctest.NVecs())), nil
 
 }
+
+/*******RMSF functions Family***************/
+
+//RMSD returns a function that will calculate the RMSD of as many selections as requested from a given set of coordinates against the coordinates
+//in the mol object.
+func RMSF(mol *chem.Molecule, args []string) func(coord *v3.Matrix) []float64 {
+	//	fmt.Println("Use: MDan RMSD sel1 sel2...")
+	argslen := len(args)
+	if argslen < 1 {
+		panic("RMSF: Not enough arguments, need at least one!")
+	}
+	indexes := make([][]int, 0, argslen)
+	for _, v := range args {
+		s, err := sel2atoms(mol, v)
+		if err != nil {
+			panic("RMSF: sel2atoms:" + err.Error())
+		}
+		indexes = append(indexes, s)
+	}
+	frames:=0.0
+	cm := make([]*v3.Matrix, 0, len(indexes))
+	sqcm := make([]*v3.Matrix, 0, len(indexes))
+	temp := make([]*v3.Matrix, 0, len(indexes))
+	test := make([]*v3.Matrix, 0, len(indexes))
+//	stdevs:=make([][]float64,0,len(indexes))
+	for _, v := range indexes {
+		tr := v3.Zeros(len(v))
+		tt := v3.Zeros(len(v))
+		temptest:= v3.Zeros(len(v))
+		ttemp := v3.Zeros(len(v))
+		tr.SomeVecs(mol.Coords[0], v) //the refs are already correctly filled
+		cm = append(cm, tr)
+		sqcm = append(sqcm, tt)
+		temp = append(temp, ttemp)
+		test = append(test,temptest)
+		//stdevs=append(stdevs,make([]float64,0,len(v)))
+	}
+	ret := func(coord *v3.Matrix) []float64 {
+		frames++
+		numbers:=0
+		output,_:=os.Create("RMSF.dat") //A bit crazy, but since I don't know when does the traj end, I have to write a "current" RMSF for each frame ( save for the first 2). I do it in the same file, which means that for each frame, the file gets overwritten. 
+		defer output.Close()
+		for i, v := range indexes {
+			test[i].SomeVecs(coord, v) //the refs are already correctly filled
+			cm[i].Add(cm[i],test[i])
+			temp[i].Dense.MulElem(test[i],test[i])
+			sqcm[i].Add(temp[i],sqcm[i])
+			if frames<2{
+				continue
+			}
+			sqcm[i].Scale(1/frames,sqcm[i])
+			cm[i].Scale(1/frames,cm[i],)
+			temp[i].MulElem(cm[i],cm[i])
+			temp[i].Sub(sqcm[i],temp[i])
+			vecs:=temp[i].NVecs()
+			for j:=0;j<vecs;j++{
+				numbers++
+				output.WriteString(fmt.Sprintf("%7d %8.3f\n", numbers,math.Sqrt(temp[i].VecView(j).Norm(2))))
+			}
+			output.WriteString("\n")
+			//Since I don't know when do the frames stop, I need to every time get my accumulators back to the regular state.
+			//Of course I could just multiply the new set of numbers to be added in each frame by 1/(frames-1), but I'll refrain from
+			//getting cute until I know this works.
+			sqcm[i].Scale(frames,sqcm[i])
+			cm[i].Scale(frames,cm[i])
+		}
+		return []float64{0.0} //Dummy output
+	}
+	return ret
+}
+
+
+
+
+
+
+
 
 //********The Distance family functions**********//
 
