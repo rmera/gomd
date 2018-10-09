@@ -463,7 +463,7 @@ func mdan(traj chem.Traj, f func(*v3.Matrix) []float64, skip, begin int) {
 				break //We processed all frames and are ready, not a real error.
 
 			} else {
-				panic(err.Error)
+				panic(err.Error())
 			}
 		}
 		if (lastread >= 0 && i < lastread+skip) || i < begin-1 { //not so nice check for this twice
