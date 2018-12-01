@@ -36,8 +36,8 @@ elif len(a.tags.split())==1:
         tagslist.append("")
 
 else:
-    prop=a.tagsstring.split()[0]
-    tagslist=a.tagsstring.split()[1:]
+    prop=a.tags.split()[0]
+    tagslist=a.tags.split()[1:]
 
 runav=False
 window=-1
@@ -77,7 +77,7 @@ for line in fin:
             ys[0].append(float(v))
 
 
-glyphs=["b-","r-","k-","g-","c-","m-","k--","b^-","ro-","g.-","c:"]        
+glyphs=["b-","r-","g-","k-","c-","m-","k--","b^-","ro-","g.-","c:"]        
 
 
 if a.columns>len(glyphs):
