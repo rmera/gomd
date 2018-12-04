@@ -28,8 +28,8 @@ prop="Property"
 
 tagslist=[]
 if a.tags=="":
-    for i in range(columns):
-        tags.append("Prop. "+str(i+1))
+    for i in range(a.columns):
+        tagslist.append("Prop. "+str(i+1))
 elif len(a.tags.split())==1:
     prop=a.tags
     for i in range(a.columns):
@@ -99,7 +99,7 @@ if hist:
 x2=x
 for i,y in enumerate(ys):
     if a.runav>0:
-        y=np.convolve(y, np.ones((a.window,))/a.window, mode='valid')
+        y=np.convolve(y, np.ones((window,))/window, mode='valid')
         ac=len(x)-len(y)
         x2=x[ac:]
     if a.histogram:
@@ -109,7 +109,7 @@ for i,y in enumerate(ys):
         else:
             plt.hist(y,bins="auto",histtype="step",cumulative=cdf,normed=density)
         continue
-    if a.tags[i]!="":
+    if tagslist!="":
         ax.plot(x2,y,glyphs[i],label=tagslist[i])
     else:
         ax.plot(x2,y,glyphs[i])
