@@ -58,7 +58,7 @@ func main() {
 	skip := flag.Int("skip", 0, "How many frames to skip between reads.")
 	begin := flag.Int("begin", 1, "The frame from where to start reading.")
 	fixGromacs := flag.Bool("fixGMX", false, "Gromacs PDB numbering issue with more than 10000 residues will be fixed and a new PDB written")
-	format := flag.Int("format", 0, "0 for xtc (default), 1 for OldAmber (crd), 2 for dcd (NAMD)")
+	format := flag.Int("format", 0, "0 for xtc (default), 1 for OldAmber (crd), 2 for dcd (NAMD), 3 for multipdb")
 	flag.Parse()
 	args := flag.Args()
 	//	println("SKIP", *skip, *begin, args) ///////////////////////////
@@ -85,6 +85,11 @@ func main() {
 		}
 	case 2:
 		traj, err = dcd.New(args[2])
+		if err != nil {
+			panic(err.Error())
+		}
+	 case 3:
+		 traj, err =  chem.PDBFileRead(args[2], false)
 		if err != nil {
 			panic(err.Error())
 		}
@@ -363,7 +368,11 @@ func RMSF(mol *chem.Molecule, args []string) func(coord *v3.Matrix) []float64 {
 			vecs:=temp[i].NVecs()
 			for j:=0;j<vecs;j++{
 				numbers++
-				output.WriteString(fmt.Sprintf("%7d %8.3f\n", numbers,math.Sqrt(temp[i].VecView(j).Norm(2))))
+				a:="\n"
+				if j+1==vecs{
+					a=""
+				}
+				output.WriteString(fmt.Sprintf("%7d %8.3f"+a, numbers,math.Sqrt(temp[i].VecView(j).Norm(2))))
 			}
 			output.WriteString("\n")
 			//Since I don't know when do the frames stop, I need to every time get my accumulators back to the regular state.
