@@ -98,6 +98,11 @@ func main() {
 		if err != nil {
 			panic(err.Error())
 		}
+	 case 3:
+		 traj, err =  chem.PDBFileRead(args[2], false)
+		if err != nil {
+			panic(err.Error())
+		}
 	}
 	task := args[0]
 	if task == "Distance" {
@@ -373,7 +378,11 @@ func RMSF(mol *chem.Molecule, args []string) func(coord *v3.Matrix) []float64 {
 			vecs:=temp[i].NVecs()
 			for j:=0;j<vecs;j++{
 				numbers++
-				output.WriteString(fmt.Sprintf("%7d %8.3f\n", numbers,math.Sqrt(temp[i].VecView(j).Norm(2))))
+				a:="\n"
+				if j+1==vecs{
+					a=""
+				}
+				output.WriteString(fmt.Sprintf("%7d %8.3f"+a, numbers,math.Sqrt(temp[i].VecView(j).Norm(2))))
 			}
 			output.WriteString("\n")
 			//Since I don't know when do the frames stop, I need to every time get my accumulators back to the regular state.
