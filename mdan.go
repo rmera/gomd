@@ -489,7 +489,7 @@ func mdan(traj chem.Traj, ref *v3.Matrix, f func(*v3.Matrix) []float64, skip, be
 			continue
 		}
 		if super{
-			_,err:=chem.Super(ref,coords,superlist)
+			_,err:=chem.Super(coords,ref,superlist,superlist)
 			if err!=nil{
 				panic("Superposition failed! "+err.Error())
 			}

@@ -16,10 +16,15 @@ p.add_argument("--runav",type=int,help="Use a Running average with N-values wind
 p.add_argument("--histogram", type=bool,help="Plot an histogram of the values", default=False)
 p.add_argument("--cdf", type=bool,help="Plot the CDF of the values, only applicable if the --histogram flag is also given"  , default=False)
 p.add_argument("--tu", type=str,help="Time units" , default="ns")
-
+p.add_argument("--forceyrange", type=str,help="Force the y range to go from two given values" , default="")
 
 
 a = p.parse_args()
+
+forcey=[]
+if a.forceyrange!="":
+    for i in a.forceyrange.split():
+        forcey.append(float(i))
 
 
 #The following is not very pretty, sorry about that.
@@ -89,6 +94,10 @@ d = c[::-1]
 
 # Create plots with pre-defined labels.
 fig, ax = plt.subplots()
+
+if forcey!=[]:
+    axes = plt.gca()
+    axes.set_ylim([forcey[0],forcey[1]])
 
 plt.xlabel('Simulation time ('+a.tu+')')
 plt.ylabel(prop)
