@@ -16,11 +16,25 @@ p.add_argument("--runav",type=int,help="Use a Running average with N-values wind
 p.add_argument("--histogram", type=bool,help="Plot an histogram of the values", default=False)
 p.add_argument("--cdf", type=bool,help="Plot the CDF of the values, only applicable if the --histogram flag is also given"  , default=False)
 p.add_argument("--tu", type=str,help="Time units" , default="ns")
-
-
-
+p.add_argument("--rmsf", type=bool, help="plot a rmsf run",default=False)
+p.add_argument("--highlight", type=str, help="X values to highlight, give as a list of numbers separated by spaces, all surrounded by a set of quotation marks",default="")
+p.add_argument("--forceyrange", type=str,help="Give two numbers separated by a space. Forces the boundary of the y axis to be twose two numbers",default="")
 a = p.parse_args()
 
+yrange=[]
+force=a.forceyrange
+if force!="":
+    f=force.split()
+    yrange.append(float(f[0]))
+    yrange.append(float(f[1]))
+
+#process highlight, we get the x coordinates that should be highlighted.
+highstr=a.highlight.split()
+xhigh=[]
+for i in highstr:
+    if a.highlight=="":
+        break
+    xhigh.append(float(i))
 
 #The following is not very pretty, sorry about that.
 prop="Property"
@@ -61,6 +75,10 @@ x=[]
 ys=[]
 
 
+
+
+
+
 if a.onlyplot==-1:
     for i in range(a.columns):
         ys.append([])
@@ -76,6 +94,17 @@ for line in fin:
         elif (i+1)==a.onlyplot:
             ys[0].append(float(v))
 
+#from the x coordinates we got before, we
+#now get the y coordinates that are to be highlighted
+#then we plot this pair with some exotic gliph
+yhigh=[]
+for i,val in enumerate(x):
+    if a.highlight=="":
+        break
+    if val in xhigh:
+        yhigh.append(ys[0][i]) #only the first column is highlightened
+
+            
 
 glyphs=["b-","r-","g-","k-","c-","m-","k--","b^-","ro-","g.-","c:"]        
 
@@ -90,16 +119,29 @@ d = c[::-1]
 # Create plots with pre-defined labels.
 fig, ax = plt.subplots()
 
-plt.xlabel('Simulation time ('+a.tu+')')
+plt.xlabel('Time '+a.tu)
+
+if yrange:
+    axes = plt.gca()
+    axes.set_ylim(yrange)
+
+if a.rmsf:
+    print "yaaaaaaaaay"
+    plt.xlabel("Residue number")
 plt.ylabel(prop)
 if hist:
     plt.xlabel("Property")
     plt.ylabel("Population")
     
 x2=x
+
+
+ax.plot(xhigh,yhigh,"g*") 
+
+
 for i,y in enumerate(ys):
     if a.runav>0:
-        y=np.convolve(y, np.ones((window,))/window, mode='valid')
+        y=np.convolve(y, np.ones((a.runav,))/a.runav, mode='valid')
         ac=len(x)-len(y)
         x2=x[ac:]
     if a.histogram:
@@ -109,12 +151,12 @@ for i,y in enumerate(ys):
         else:
             plt.hist(y,bins="auto",histtype="step",cumulative=cdf,normed=density)
         continue
-    if tagslist!="":
+    if  tagslist[i]!="":
         ax.plot(x2,y,glyphs[i],label=tagslist[i])
     else:
         ax.plot(x2,y,glyphs[i])
-ax.legend(loc='right')
-
+ax.legend(loc='upper right')
+plt.savefig(a.fname.replace(".dat",".png"))
 
 plt.show()
 
