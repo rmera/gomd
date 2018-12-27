@@ -126,7 +126,6 @@ if yrange:
     axes.set_ylim(yrange)
 
 if a.rmsf:
-    print "yaaaaaaaaay"
     plt.xlabel("Residue number")
 plt.ylabel(prop)
 if hist:

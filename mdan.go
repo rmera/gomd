@@ -58,7 +58,8 @@ func main() {
 	skip := flag.Int("skip", 0, "How many frames to skip between reads.")
 	begin := flag.Int("begin", 1, "The frame from where to start reading.")
 	fixGromacs := flag.Bool("fixGMX", false, "Gromacs PDB numbering issue with more than 10000 residues will be fixed and a new PDB written")
-	format := flag.Int("format", 0, "0 for xtc (default), 1 for OldAmber (crd), 2 for dcd (NAMD), 3 for multipdb")
+	tosuper:=flag.String("tosuper","","The atoms to be used of the superposition, if that is to be performed")
+	format := flag.Int("format", 0, "0 for xtc (default), 1 for OldAmber (crd), 2 for dcd (NAMD)")
 	flag.Parse()
 	args := flag.Args()
 	//	println("SKIP", *skip, *begin, args) ///////////////////////////
@@ -70,6 +71,15 @@ func main() {
 	if *fixGromacs {
 		chem.FixGromacsPDB(mol)
 		chem.PDBFileWrite("Fixed"+args[1], mol.Coords[0], mol, nil)
+	}
+	var superlist []int
+	super:=false
+	if *tosuper!=""{
+		superlist,err=sel2atoms(mol,*tosuper)
+			if err!=nil{
+				panic("Wrong superposition list")
+			}
+		super=true
 	}
 	var traj chem.Traj
 	switch *format {
@@ -111,7 +121,7 @@ func main() {
 		fmt.Println("Args:", args)
 		panic("Task parameter invalid or not present" + args[0])
 	}
-	mdan(traj, f, *skip, *begin)
+	mdan(traj,mol.Coords[0],f, *skip, *begin, super, superlist)
 }
 
 /********General helper functions************/
@@ -458,7 +468,7 @@ func Distance(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 //slice as second to N fields, with the fields separated by spaces.
 //the passed function should be a closure with everything necessary to obtain the desired data from each frame
 //of the trajectory.
-func mdan(traj chem.Traj, f func(*v3.Matrix) []float64, skip, begin int) {
+func mdan(traj chem.Traj, ref *v3.Matrix, f func(*v3.Matrix) []float64, skip, begin int,super bool, superlist []int) {
 	var coords *v3.Matrix
 	lastread := -1
 	for i := 0; ; i++ { //infinite loop, we only break out of it by using "break"  //modified for profiling
@@ -477,6 +487,12 @@ func mdan(traj chem.Traj, f func(*v3.Matrix) []float64, skip, begin int) {
 		}
 		if (lastread >= 0 && i < lastread+skip) || i < begin-1 { //not so nice check for this twice
 			continue
+		}
+		if super{
+			_,err:=chem.Super(coords,ref,superlist,superlist)
+			if err!=nil{
+				panic("Superposition failed! "+err.Error())
+			}
 		}
 		lastread = i
 		//The important part
