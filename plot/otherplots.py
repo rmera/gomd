@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+from __future__ import print_function
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
@@ -110,7 +110,7 @@ glyphs=["b-","r-","g-","k-","c-","m-","k--","b^-","ro-","g.-","c:"]
 
 
 if a.columns>len(glyphs):
-    print "only up to ", len(glyphs), "properties can be plot simultaneously"
+    print("only up to ", len(glyphs), "properties can be plot simultaneously")
 
 z = b = np.arange(0, 3, .02)
 c = np.exp(z)
@@ -145,7 +145,7 @@ for i,y in enumerate(ys):
         x2=x[ac:]
     if a.histogram:
         print(len(x),len(y))
-        if tags[i]!="":
+        if tagslist[i]!="":
             plt.hist(y,bins="auto",histtype="step",label=tagslist[i],cumulative=cdf,normed=density)
         else:
             plt.hist(y,bins="auto",histtype="step",cumulative=cdf,normed=density)

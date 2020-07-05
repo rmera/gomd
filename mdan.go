@@ -38,15 +38,17 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math"
 	"os"
-	"github.com/rmera/gochem"
+
+	chem "github.com/rmera/gochem"
 	"github.com/rmera/gochem/amberold"
 	"github.com/rmera/gochem/dcd"
-	"github.com/rmera/gochem/v3"
+	v3 "github.com/rmera/gochem/v3"
 	"github.com/rmera/gochem/xtc"
 	"github.com/rmera/scu"
 	"gonum.org/v1/gonum/mat"
-	"math"
+
 	//	"sort"
 	"strconv"
 	"strings"
@@ -58,8 +60,8 @@ func main() {
 	skip := flag.Int("skip", 0, "How many frames to skip between reads.")
 	begin := flag.Int("begin", 1, "The frame from where to start reading.")
 	fixGromacs := flag.Bool("fixGMX", false, "Gromacs PDB numbering issue with more than 10000 residues will be fixed and a new PDB written")
-	tosuper:=flag.String("tosuper","","The atoms to be used of the superposition, if that is to be performed")
-	format := flag.Int("format", 0, "0 for xtc (default), 1 for OldAmber (crd), 2 for dcd (NAMD)")
+	tosuper := flag.String("tosuper", "", "The atoms to be used of the superposition, if that is to be performed")
+	format := flag.Int("format", 0, "0 for xtc (default), 1 for OldAmber (crd), 2 for dcd (NAMD),3 for multi PDB, 4 for multi XYZ")
 	flag.Parse()
 	args := flag.Args()
 	//	println("SKIP", *skip, *begin, args) ///////////////////////////
@@ -73,13 +75,13 @@ func main() {
 		chem.PDBFileWrite("Fixed"+args[1], mol.Coords[0], mol, nil)
 	}
 	var superlist []int
-	super:=false
-	if *tosuper!=""{
-		superlist,err=sel2atoms(mol,*tosuper)
-			if err!=nil{
-				panic("Wrong superposition list")
-			}
-		super=true
+	super := false
+	if *tosuper != "" {
+		superlist, err = sel2atoms(mol, *tosuper)
+		if err != nil {
+			panic("Wrong superposition list")
+		}
+		super = true
 	}
 	var traj chem.Traj
 	switch *format {
@@ -89,7 +91,7 @@ func main() {
 			panic(err.Error())
 		}
 	case 1:
-		traj, err = amberold.New(args[2],mol.Len())
+		traj, err = amberold.New(args[2], mol.Len(), false)
 		if err != nil {
 			panic(err.Error())
 		}
@@ -98,11 +100,17 @@ func main() {
 		if err != nil {
 			panic(err.Error())
 		}
-	 case 3:
-		 traj, err =  chem.PDBFileRead(args[2], false)
+	case 3:
+		traj, err = chem.PDBFileRead(args[2], false)
 		if err != nil {
 			panic(err.Error())
 		}
+	case 4:
+		traj, err = chem.XYZFileRead(args[2])
+		if err != nil {
+			panic(err.Error())
+		}
+
 	}
 	task := args[0]
 	if task == "Distance" {
@@ -117,11 +125,13 @@ func main() {
 		f = RMSF(mol, args[3:])
 	} else if task == "WithinCutoff" {
 		f = WithinCutoff(mol, args[3:])
+	} else if task == "Shape" {
+		f = Shape(mol, args[3:])
 	} else {
 		fmt.Println("Args:", args)
 		panic("Task parameter invalid or not present" + args[0])
 	}
-	mdan(traj,mol.Coords[0],f, *skip, *begin, super, superlist)
+	mdan(traj, mol.Coords[0], f, *skip, *begin, super, superlist)
 }
 
 /********General helper functions************/
@@ -179,8 +189,22 @@ func ones(size int) []float64 {
 //between the two (themselves included) are valid residue IDs that will be included.
 //atoms is a list of atom names in the PDB/AMBER convention. Only atoms in this list will be included. ALL includes every atom.
 //It the first character of atoms is an exclamation signe "!", all atoms but the ones in the list will be included.
+//If a list of atom IDs (starting from 0), separated by spaces, and starting with the word "ATOMLIST" is given, the IDs will be returned. This is useful when processing
+//a trajectory in xyz format which does not specify residues and so on.
 func sel2atoms(mol chem.Atomer, sel string) ([]int, error) {
 	fields := strings.Fields(sel)
+	//This will be used to parse a simple atomnombre list
+	if fields[0] == "ATOMLIST" {
+		indexes := make([]int, 0, len(fields[1:]))
+		for _, i := range fields[1:] {
+			index, err := strconv.Atoi(i)
+			if err != nil {
+				return nil, err
+			}
+			indexes = append(indexes, index)
+		}
+		return indexes, nil
+	}
 	//we start parsing the residue IDs
 	reslistS := strings.Split(fields[0], ",")
 	reslist := make([]int, 0, len(reslistS))
@@ -340,68 +364,61 @@ func RMSF(mol *chem.Molecule, args []string) func(coord *v3.Matrix) []float64 {
 		}
 		indexes = append(indexes, s)
 	}
-	frames:=0.0
+	frames := 0.0
 	cm := make([]*v3.Matrix, 0, len(indexes))
 	sqcm := make([]*v3.Matrix, 0, len(indexes))
 	temp := make([]*v3.Matrix, 0, len(indexes))
 	test := make([]*v3.Matrix, 0, len(indexes))
-//	stdevs:=make([][]float64,0,len(indexes))
+	//	stdevs:=make([][]float64,0,len(indexes))
 	for _, v := range indexes {
 		tr := v3.Zeros(len(v))
 		tt := v3.Zeros(len(v))
-		temptest:= v3.Zeros(len(v))
+		temptest := v3.Zeros(len(v))
 		ttemp := v3.Zeros(len(v))
 		tr.SomeVecs(mol.Coords[0], v) //the refs are already correctly filled
 		cm = append(cm, tr)
 		sqcm = append(sqcm, tt)
 		temp = append(temp, ttemp)
-		test = append(test,temptest)
+		test = append(test, temptest)
 		//stdevs=append(stdevs,make([]float64,0,len(v)))
 	}
 	ret := func(coord *v3.Matrix) []float64 {
 		frames++
-		numbers:=0
-		output,_:=os.Create("RMSF.dat") //A bit crazy, but since I don't know when does the traj end, I have to write a "current" RMSF for each frame ( save for the first 2). I do it in the same file, which means that for each frame, the file gets overwritten. 
+		numbers := 0
+		output, _ := os.Create("RMSF.dat") //A bit crazy, but since I don't know when does the traj end, I have to write a "current" RMSF for each frame ( save for the first 2). I do it in the same file, which means that for each frame, the file gets overwritten.
 		defer output.Close()
 		for i, v := range indexes {
 			test[i].SomeVecs(coord, v) //the refs are already correctly filled
-			cm[i].Add(cm[i],test[i])
-			temp[i].Dense.MulElem(test[i],test[i])
-			sqcm[i].Add(temp[i],sqcm[i])
-			if frames<2{
+			cm[i].Add(cm[i], test[i])
+			temp[i].Dense.MulElem(test[i], test[i])
+			sqcm[i].Add(temp[i], sqcm[i])
+			if frames < 2 {
 				continue
 			}
-			sqcm[i].Scale(1/frames,sqcm[i])
-			cm[i].Scale(1/frames,cm[i],)
-			temp[i].MulElem(cm[i],cm[i])
-			temp[i].Sub(sqcm[i],temp[i])
-			vecs:=temp[i].NVecs()
-			for j:=0;j<vecs;j++{
+			sqcm[i].Scale(1/frames, sqcm[i])
+			cm[i].Scale(1/frames, cm[i])
+			temp[i].MulElem(cm[i], cm[i])
+			temp[i].Sub(sqcm[i], temp[i])
+			vecs := temp[i].NVecs()
+			for j := 0; j < vecs; j++ {
 				numbers++
-				a:="\n"
-				if j+1==vecs{
-					a=""
+				a := "\n"
+				if j+1 == vecs {
+					a = ""
 				}
-				output.WriteString(fmt.Sprintf("%7d %8.3f"+a, numbers,math.Sqrt(temp[i].VecView(j).Norm(2))))
+				output.WriteString(fmt.Sprintf("%7d %8.3f"+a, numbers, math.Sqrt(temp[i].VecView(j).Norm(2))))
 			}
 			output.WriteString("\n")
 			//Since I don't know when do the frames stop, I need to every time get my accumulators back to the regular state.
 			//Of course I could just multiply the new set of numbers to be added in each frame by 1/(frames-1), but I'll refrain from
 			//getting cute until I know this works.
-			sqcm[i].Scale(frames,sqcm[i])
-			cm[i].Scale(frames,cm[i])
+			sqcm[i].Scale(frames, sqcm[i])
+			cm[i].Scale(frames, cm[i])
 		}
 		return []float64{0.0} //Dummy output
 	}
 	return ret
 }
-
-
-
-
-
-
-
 
 //********The Distance family functions**********//
 
@@ -468,7 +485,7 @@ func Distance(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 //slice as second to N fields, with the fields separated by spaces.
 //the passed function should be a closure with everything necessary to obtain the desired data from each frame
 //of the trajectory.
-func mdan(traj chem.Traj, ref *v3.Matrix, f func(*v3.Matrix) []float64, skip, begin int,super bool, superlist []int) {
+func mdan(traj chem.Traj, ref *v3.Matrix, f func(*v3.Matrix) []float64, skip, begin int, super bool, superlist []int) {
 	var coords *v3.Matrix
 	lastread := -1
 	for i := 0; ; i++ { //infinite loop, we only break out of it by using "break"  //modified for profiling
@@ -488,10 +505,10 @@ func mdan(traj chem.Traj, ref *v3.Matrix, f func(*v3.Matrix) []float64, skip, be
 		if (lastread >= 0 && i < lastread+skip) || i < begin-1 { //not so nice check for this twice
 			continue
 		}
-		if super{
-			_,err:=chem.Super(coords,ref,superlist,superlist)
-			if err!=nil{
-				panic("Superposition failed! "+err.Error())
+		if super {
+			_, err := chem.Super(coords, ref, superlist, superlist)
+			if err != nil {
+				panic("Superposition failed! " + err.Error())
 			}
 		}
 		lastread = i
