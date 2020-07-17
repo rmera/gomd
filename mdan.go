@@ -1,7 +1,7 @@
 /*
 To the long life of the Ven. Khenpo Phuntzok Tenzin Rinpoche.
 
-MDAn, a little tool for the analysis of MD trajectories.
+goMD a little tool for the analysis of MD trajectories.
 
 
 This program makes extensive use of the goChem Computational Chemistry library.
@@ -60,6 +60,7 @@ func main() {
 	skip := flag.Int("skip", 0, "How many frames to skip between reads.")
 	begin := flag.Int("begin", 1, "The frame from where to start reading.")
 	fixGromacs := flag.Bool("fixGMX", false, "Gromacs PDB numbering issue with more than 10000 residues will be fixed and a new PDB written")
+	superTraj := flag.Bool("super", false, "No analysis is performed. Instead, the trajectory is superimposed to the reference structure")
 	tosuper := flag.String("tosuper", "", "The atoms to be used of the superposition, if that is to be performed")
 	format := flag.Int("format", 0, "0 for xtc (default), 1 for OldAmber (crd), 2 for dcd (NAMD),3 for multi PDB, 4 for multi XYZ")
 	flag.Parse()
@@ -112,6 +113,35 @@ func main() {
 		}
 
 	}
+	if *superTraj {
+		target := make([]*v3.Matrix, 0, 500) //I just put any large number, after all, each element is just a pointer.
+		f = Super(mol, args[3:], &target)
+		mdan(traj, mol.Coords[0], f, *skip, *begin, super, superlist)
+		fmt.Println("To the PDB file", len(target), mol.Len()) //////////////////
+		mol.Coords = target
+		bfacs := make([][]float64, 0, len(target))
+		increment := 99.0 / float64(len(target))
+		//We will set the bfactors for easy coloring by trajectory.
+		for i, _ := range target {
+			b := make([]float64, 0, mol.Len())
+			for j := 0; j < mol.Len(); j++ {
+				//	fmt.Println(0.0 + float64(i)*increment) ///////////////////
+				b = append(b, 0.0+float64(i)*increment)
+			}
+			bfacs = append(bfacs, b)
+		}
+		out, err := os.Create("PDBTraj.pdb")
+		if err != nil {
+			panic("os.Create " + err.Error())
+		}
+		defer out.Close()
+		err = chem.MultiPDBWrite(out, target, mol, bfacs)
+		if err != nil {
+			panic(err.Error())
+		}
+		return
+	}
+
 	task := args[0]
 	if task == "Distance" {
 		f = Distance(mol, args[3:])
@@ -495,7 +525,7 @@ func mdan(traj chem.Traj, ref *v3.Matrix, f func(*v3.Matrix) []float64, skip, be
 		err := traj.Next(coords) //Obtain the next frame of the trajectory.
 		if err != nil {
 			_, ok := err.(chem.LastFrameError)
-			if ok {
+			if ok || err.Error() == "EOF" {
 				break //We processed all frames and are ready, not a real error.
 
 			} else {
