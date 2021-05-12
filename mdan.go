@@ -378,7 +378,7 @@ func memRMSD(ctest, ctempla, tmp *v3.Matrix) (float64, error) {
 
 /*******RMSF functions Family***************/
 
-//RMSD returns a function that will calculate the RMSD of as many selections as requested from a given set of coordinates against the coordinates
+//RMSF returns a function that will calculate the RMSF of as many selections as requested from a given set of coordinates against the coordinates
 //in the mol object.
 func RMSF(mol *chem.Molecule, args []string) func(coord *v3.Matrix) []float64 {
 	//	fmt.Println("Use: MDan RMSD sel1 sel2...")
@@ -429,21 +429,21 @@ func RMSF(mol *chem.Molecule, args []string) func(coord *v3.Matrix) []float64 {
 			cm[i].Scale(1/frames, cm[i])
 			temp[i].MulElem(cm[i], cm[i])
 			temp[i].Sub(sqcm[i], temp[i])
-			vecs := temp[i].NVecs()
-			for j := 0; j < vecs; j++ {
-				numbers++
-				a := "\n"
-				if j+1 == vecs {
-					a = ""
-				}
-				output.WriteString(fmt.Sprintf("%7d %8.3f"+a, numbers, math.Sqrt(temp[i].VecView(j).Norm(2))))
-			}
-			output.WriteString("\n")
+
 			//Since I don't know when do the frames stop, I need to every time get my accumulators back to the regular state.
 			//Of course I could just multiply the new set of numbers to be added in each frame by 1/(frames-1), but I'll refrain from
 			//getting cute until I know this works.
 			sqcm[i].Scale(frames, sqcm[i])
 			cm[i].Scale(frames, cm[i])
+		}
+		vecs := temp[0].NVecs()
+		for j := 0; j < vecs; j++ {
+			numbers++
+			outstr := fmt.Sprintf("%7d ", numbers)
+			for i := 0; i < len(temp); i++ {
+				outstr = outstr + fmt.Sprintf("%8.3f ", math.Sqrt(temp[i].VecView(j).Norm(2)))
+			}
+			output.WriteString(outstr + "\n")
 		}
 		return []float64{0.0} //Dummy output
 	}
