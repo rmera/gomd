@@ -1,6 +1,6 @@
 To the long life of the Ven. Khenpo Phuntzok Tenzin Rinpoche.
 
-# GopherMD, a tool for the analysis of MD trajectories.
+# goMD, a tool for the analysis of MD trajectories.
 
 
 This program makes extensive use of the goChem Computational Chemistry library.
@@ -12,11 +12,11 @@ The gonum library (http://www.gonum.org/) is also much used (and appreciated).
 
 
 
-Gopher MD is a program that can calculate  different parameters for each frame of a trajectory, printing the results to the standard output, to be plot against the frame number.
+goMD is a program that can calculate  different parameters for each frame of a trajectory, printing the results to the standard output, to be plot against the frame number.
 Plotting scripts are also inlcuded.
 
 ##  Compilation
-Gopher MD works with the current development version of goChem. It also requires the silly chemical utils (github.com/rmera/scu) and the xdrfile library from Gromacs (www.gromacs.com).
+goMD works with the current development version of goChem. It also requires the silly chemical utils (github.com/rmera/scu) and the xdrfile library from Gromacs (www.gromacs.com).
 
 Binaries for common architectures are likely available upon requests.
 
@@ -36,7 +36,7 @@ The "format" options determines the format of the trajectory file. The following
 
 ### Tasks
 
-Gopher MD can perform several tasks, and it is build so the implementation of new tasks is rather simple. The current tasks and their flags are:
+goMD can perform several tasks, and it is build so the implementation of new tasks is rather simple. The current tasks and their flags are:
 
 
 * Ramachandran:
@@ -80,7 +80,7 @@ ATNAME is a PDB atom name such as CA (alpha carbon). Hydrogen names may vary wit
 
 
 
-GopherMD, a little program for the analysis of molecular dynamics simulations.
+goMD, a little program for the analysis of molecular dynamics simulations.
 Copyright (C) 2017  Raul Mera Adasme.
 
 This program is free software; you can redistribute it and/or

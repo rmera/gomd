@@ -44,14 +44,14 @@ tagslist=[]
 if a.tags=="":
     for i in range(a.columns):
         tagslist.append("Prop. "+str(i+1))
-elif len(a.tags.split())==1:
+elif len(a.tags.split(","))==1:
     prop=a.tags
     for i in range(a.columns):
         tagslist.append("")
 
 else:
-    prop=a.tags.split()[0]
-    tagslist=a.tags.split()[1:]
+    prop=a.tags.split(",")[0]
+    tagslist=a.tags.split(",")[1:]
 
 runav=False
 window=-1
@@ -129,8 +129,8 @@ if a.rmsf:
     plt.xlabel("Residue number")
 plt.ylabel(prop)
 if hist:
-    plt.xlabel("Property")
-    plt.ylabel("Population")
+    plt.xlabel(prop)
+    plt.ylabel("Normalized frequency")
     
 x2=x
 
@@ -146,9 +146,9 @@ for i,y in enumerate(ys):
     if a.histogram:
         print(len(x),len(y))
         if tagslist[i]!="":
-            plt.hist(y,bins="auto",histtype="step",label=tagslist[i],cumulative=cdf,normed=density)
+            plt.hist(y,bins="auto",histtype="step",label=tagslist[i],cumulative=cdf, density=True)
         else:
-            plt.hist(y,bins="auto",histtype="step",cumulative=cdf,normed=density)
+            plt.hist(y,bins="auto",histtype="step",cumulative=cdf,density=True)
         continue
     if  tagslist[i]!="":
         ax.plot(x2,y,glyphs[i],label=tagslist[i])
