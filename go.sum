@@ -2,8 +2,8 @@ github.com/ajstarks/svgo v0.0.0-20180226025133-644b8db467af/go.mod h1:K08gAheRH3
 github.com/fogleman/gg v1.2.1-0.20190220221249-0403632d5b90/go.mod h1:R/bRT+9gY/C5z7JzPU0zXsXHKM4/ayA+zqcVNZzPa1k=
 github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0/go.mod h1:E/TSTwGwJL78qG/PmXZO1EjYhfJinVAhrmmHX6Z8B9k=
 github.com/jung-kurt/gofpdf v1.0.3-0.20190309125859-24315acbbda5/go.mod h1:7Id9E/uU8ce6rXgefFLlgrJj/GYY22cpxn+r32jIOes=
-github.com/rmera/gochem v0.5.0 h1:9KzPph+ruzt0FXExonn+/68gPHQ1+4CTw6A9owI3Mo8=
-github.com/rmera/gochem v0.5.0/go.mod h1:J9VEVm1CiMkOSCBoMWkvHWv/ZM4HFKMAlahX8XQGavc=
+github.com/rmera/gochem v0.6.1 h1:DQKryL0yNDBfo0DFwVb0KZvqWxaLEMSl/k1yceF4b+8=
+github.com/rmera/gochem v0.6.1/go.mod h1:J9VEVm1CiMkOSCBoMWkvHWv/ZM4HFKMAlahX8XQGavc=
 github.com/rmera/scu v0.0.0-20141011003137-5f665ea20cce h1:CduwT0Cxt/DKDSbb4/NtgU9H0aQS25ekk5zu4yEk5Wc=
 github.com/rmera/scu v0.0.0-20141011003137-5f665ea20cce/go.mod h1:4ev5bGOsKrx6BIcHCkPoZG5adRrbMAJKanrJRCQMhEc=
 github.com/skelterjohn/go.matrix v0.0.0-20130517144113-daa59528eefd h1:+ZLYzP9SYC3WU9buyb9H0l9DQxqVFOCkDG8QnNBMAlA=
