@@ -58,6 +58,8 @@ import (
 func main() {
 	//The skip options
 	skip := flag.Int("skip", 0, "How many frames to skip between reads.")
+	enforcemass := flag.Bool("enforcemass", false, "For tasks requiring atomic masses, exit the program if some masses are not available. Otherwise all masses are set to 1.0 if one or more values are not found.")
+
 	begin := flag.Int("begin", 1, "The frame from where to start reading.")
 	fixGromacs := flag.Bool("fixGMX", false, "Gromacs PDB numbering issue with more than 10000 residues will be fixed and a new PDB written")
 	superTraj := flag.Bool("super", false, "No analysis is performed. Instead, the trajectory is superimposed to the reference structure")
@@ -74,6 +76,16 @@ func main() {
 	if *fixGromacs {
 		chem.FixGromacsPDB(mol)
 		chem.PDBFileWrite("Fixed"+args[1], mol.Coords[0], mol, nil)
+		os.Exit(0) //no reason to keep going.
+	}
+	//If we don't find one or more masses, we just set them all to 1.0
+	//unless you told us not to.
+	_, err = mol.Masses()
+	if err != nil && !*enforcemass {
+		for i := 0; i < mol.Len(); i++ {
+			at := mol.Atom(i)
+			at.Mass = 1.0
+		}
 	}
 	var superlist []int
 	super := false
@@ -157,6 +169,8 @@ func main() {
 		f = WithinCutoff(mol, args[3:])
 	} else if task == "Shape" {
 		f = Shape(mol, args[3:])
+	} else if task == "PlanesAngle" {
+		f = PlanesAngle(mol, args[3:])
 	} else {
 		fmt.Println("Args:", args)
 		panic("Task parameter invalid or not present" + args[0])
