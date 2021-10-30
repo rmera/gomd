@@ -8,8 +8,9 @@ import argparse
 p = argparse.ArgumentParser()
 
 p.add_argument("fname", type=str, help="Input file, gomd format")
-p.add_argument("tbf", type=float, help="delta time between frames")
-p.add_argument("columns",type=int, help="Columns in the gomd files, not counting the time (i.e first) column")
+p.add_argument("-c",type=int, help="Columns in the gomd files, not counting the time (i.e first) column",default=1)
+p.add_argument("--tbf", type=float, help="delta time between frames, if applicable", default=1)
+p.add_argument("--xlabel", type=str, help="Label for the X axis", default="Time")
 tagsstring=p.add_argument("--tags", type=str, help="Tags for the Y axis and for each plotted thing,",default="")
 p.add_argument("--onlyplot",type=int,help="Print only the Nth column versus the first", default=-1)
 p.add_argument("--runav",type=int,help="Use a Running average with N-values window", default=-1)
@@ -42,11 +43,11 @@ prop="Property"
 
 tagslist=[]
 if a.tags=="":
-    for i in range(a.columns):
-        tagslist.append("Prop. "+str(i+1))
+    for i in range(a.c):
+        tagslist.append(str(i+1))
 elif len(a.tags.split(","))==1:
     prop=a.tags
-    for i in range(a.columns):
+    for i in range(a.c):
         tagslist.append("")
 
 else:
@@ -80,7 +81,7 @@ ys=[]
 
 
 if a.onlyplot==-1:
-    for i in range(a.columns):
+    for i in range(a.c):
         ys.append([])
 else:
     ys.append([])
@@ -111,7 +112,7 @@ for i,val in enumerate(x):
 glyphs=["b-","r-","g-","k-","c-","m-","k--","b^-","ro-","g.-","c:"]        
 
 
-if a.columns>len(glyphs):
+if a.c>len(glyphs):
     print("only up to ", len(glyphs), "properties can be plot simultaneously")
 
 z = b = np.arange(0, 3, .02)
@@ -121,7 +122,11 @@ d = c[::-1]
 # Create plots with pre-defined labels.
 fig, ax = plt.subplots()
 
-plt.xlabel('Time '+a.tu)
+
+if  a.xlabel=="Time":
+    plt.xlabel('Time '+a.tu)
+else:
+    plt.xlabel(a.xlabel)
 
 if yrange:
     axes = plt.gca()
