@@ -68,7 +68,7 @@ if a.histogram:
 #End the horrible user interface
 
 
-
+extension=a.fname.split(".")[-1]
 fin=open(a.fname,"r")
 
 x=[]
@@ -86,6 +86,8 @@ else:
     ys.append([])
 
 for line in fin:
+    if line.startswith("@") or line.startswith("&") or line.startswith("#"):
+        continue
     fields=line.split()
     x.append(float(fields[0])*a.tbf)
     for i,v in enumerate(fields[1:]):
@@ -155,7 +157,7 @@ for i,y in enumerate(ys):
     else:
         ax.plot(x2,y,glyphs[i])
 ax.legend(loc='upper right')
-plt.savefig(a.fname.replace(".dat",".png"))
+plt.savefig(a.fname.replace("."+extension,".png"),dpi=600)
 
 plt.show()
 
