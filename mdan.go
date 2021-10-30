@@ -73,9 +73,9 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
-	if *fixGromacs {
+	if *fixGromacs || strings.Contains(args[0], "ixGMX") {
 		chem.FixGromacsPDB(mol)
-		chem.PDBFileWrite("Fixed"+args[1], mol.Coords[0], mol, nil)
+		chem.PDBFileWrite("Fixed-"+args[1], mol.Coords[0], mol, nil)
 		os.Exit(0) //no reason to keep going.
 	}
 	//If we don't find one or more masses, we just set them all to 1.0
