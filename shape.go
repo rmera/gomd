@@ -49,7 +49,7 @@ func PlanesAngle(mol *chem.Molecule, args []string) func(coord *v3.Matrix) []flo
 			ang := chem.Angle(p1, p2)
 			ang *= chem.Rad2Deg
 			if ang > 90 {
-				ang = 180 - ang //We can't make this distinction, because the orientation of the vector normal to the plane is not too well defined and can vary with small changes in the plane.
+				ang = 180 - ang //We can't make this distinction, because the orientation of the vector normal to the moment-of-inertia plane can vary with small changes in the position of the atoms involved.
 			}
 			pangles = append(pangles, ang)
 
