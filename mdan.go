@@ -65,8 +65,19 @@ func main() {
 	superTraj := flag.Bool("super", false, "No analysis is performed. Instead, the trajectory is superimposed to the reference structure")
 	tosuper := flag.String("tosuper", "", "The atoms to be used of the superposition, if that is to be performed")
 	format := flag.Int("format", 0, "0 for xtc (default), 1 for OldAmber (crd), 2 for dcd (NAMD),3 for multi PDB, 4 for multi XYZ")
+	flag.Usage = func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage:\n  %s: [flags] task geometry.pdb trajectory.xtc selection1 selection2 ... selectionN", os.Args[0])
+		flag.PrintDefaults()
+	}
+
 	flag.Parse()
 	args := flag.Args()
+	//We do this first, as, if this task is given, we don't need any other parameter.
+	if strings.Contains(args[0], "electionHelp") {
+		fmt.Printf("The selections are defined in the following way: \"RESID1,RESID2,RESID3-RESID3+N,RESIDN CHAIN ATNAME1,ATNAME2\"\nRESID are residue numbers. They can be separated by commas or, to specify a range, with dashes: 12,13,120,125-128,145 That would select the residues 12,13,120,125,126,127,128,145\nCHAIN must be a chain identifier such as \"A\". If chain is \"ALL\", every chain will be used. \nATNAME is a PDB atom name such as CA (alpha carbon). Hydrogen names may vary with the forcefield employed. if ALL is given, as the first atom name, all atoms in the selected residues will be consiered.\n")
+		os.Exit(0)
+	}
+
 	//	println("SKIP", *skip, *begin, args) ///////////////////////////
 	var f func(*v3.Matrix) []float64
 	mol, err := chem.PDBFileRead(args[1], false)

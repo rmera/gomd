@@ -68,7 +68,16 @@ goMD can perform several tasks, and it is build so the implementation of new tas
 
 * Shape: Plots the Planarity (oblate distortion) an Elongation (prolate distorion) indicators for the selections.
 	./gomd [-skip=X -begin=Y -format=Z] Shape pdbname xtcname "selection1" "selection2" ... "selectionN" 
-	
+
+* PlanesAngle: For every 2 selections, calculate the best plane passing through the atoms of each selection, and then returns the angles (in degrees) between the normal vector to each plane.  It requires an even number of selection.
+	./gomd [-skip=X -begin=Y -format=Z] Shape pdbname xtcname "selection1" "selection2" ... "selection(N-1)" "selectionN"
+
+* FixGMX: Will print a "fixed" version a Gromacs PDB, with the chains restored, and exit. The chain identifiers will be added in the following way: The first lines will be assigned chain "A". Whenever the residue number of a residue is smaller than the residue number of a previous residue, a new chain will be assumed, which will be assigned the chain "B", and so on with "C", "D", etc.
+	./gomd FixGMX pdbname
+
+* SelectionHelp: Will print a help message for the selections (i.e. the same text as in the next section), and exit.
+	./gomd SelectionHelp
+
 	
 ### Selections: 
 
@@ -78,10 +87,17 @@ CHAIN must be a chain identifier such as "A". If chain is "ALL", every chain wil
 ATNAME is a PDB atom name such as CA (alpha carbon). Hydrogen names may vary with the forcefield employed. if ALL is given, as the first atom name, all atoms in the selected residues will be consiered.
 
 
+### Plotting the results
+
+Two Python scripts are included to help with the result visualization.
+
+* ramachandran.py is a simple script that will plot one set of Ramachandran angles (the ones in the columns 2 and 3 of the output file from gomd) along the trajectory, coloring the value for each frame in a different hue, so any conformationa change can be observed.
+
+* otherplots.py is a rather complete plotting tool for all the other tasks. It is rather easy to use (for the simplest case of only 1 column of results, or 2 columns in total, it only requires the name of the file) but has a fair bit of options to customize the visualization.  It can plot only the selected columns, set the scale for the y-axis, plot an histogram for the results instead of the default results vs time plot, and more. Otherplots.py will ignore lines starting with "\#", "@" and "&", which allows it to plot Gromacs-produced xvg files.
 
 
 goMD, a little program for the analysis of molecular dynamics simulations.
-Copyright (C) 2017  Raul Mera Adasme.
+Copyright (c) 2017  Raul Mera Adasme.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
