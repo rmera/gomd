@@ -21,7 +21,7 @@ Download the appropiate binary and add its location to PATH.
 If you wish to use the xtc-enabled binary, you need to have the xdrfile 1.1 library from Gromacs installed (i.e. its location must be added to LD_LIBRARY_PATH).
 
 ##  Compilation
-goMD works with the current release version of goChem. It also requires the silly chemical utils (github.com/rmera/scu) and the xdrfile library from Gromacs (www.gromacs.com). As it uses modules, you can simply use the following command:
+goMD works with the current release version of goChem. It also requires the silly chemical utils (github.com/rmera/scu) and, if XTC file format support is needed, the xdrfile library from Gromacs (www.gromacs.com). As it uses modules, you can simply use the following command:
 
 ```
 go install github.com/rmera/gomd
