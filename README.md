@@ -27,7 +27,7 @@ goMD works with the current release version of goChem. It also requires the sill
 go install github.com/rmera/gomd
 ```
 
-To compile and install the program.
+To compile and install the program (compiling with XTC-trajectories support requires the xdrfile library installed, and the "xtc" compilation tag).
 
 ## Use
 
