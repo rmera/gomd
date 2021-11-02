@@ -52,7 +52,6 @@ goMD can perform several tasks, and it is build so the implementation of new tas
 
 
 * Ramachandran:
-
 ```
 	./gomd  [-skip=X -begin=Y -format=Z] Ramachandran pdbname xtcname "residuename1 chain1" "residuename2 chain2" ... "residuenameN chainN" [RGB total_frames]
 ```
@@ -96,12 +95,14 @@ goMD can perform several tasks, and it is build so the implementation of new tas
 	./gomd [-skip=X -begin=Y -format=Z] Shape pdbname xtcname "selection1" "selection2" ... "selectionN" 
 ```
 * PlanesAngle: For every 2 selections, calculate the best plane passing through the atoms of each selection, and then returns the angles (in degrees) between the normal vector to each plane.
+
 ```
 	./gomd [-skip=X -begin=Y -format=Z] Shape pdbname xtcname "selection1" "selection2" ... "selection(N-1)" "selectionN"
 ```
 Where N is an even number.
 
 * FixGMX: Will print a "fixed" version a Gromacs PDB, with the chains restored, and exit. The chain identifiers will be added in the following way: The first lines will be assigned chain "A". Whenever the residue number of a residue is smaller than the residue number of a previous residue, a new chain will be assumed, which will be assigned the chain "B", and so on with "C", "D", etc.
+
 ```
 	./gomd FixGMX pdbname
 ```
