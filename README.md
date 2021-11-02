@@ -70,7 +70,9 @@ goMD can perform several tasks, and it is build so the implementation of new tas
 ```
 	./gomd [-skip=X -begin=Y -format=Z] ClosestN pdbname xtcname "selection" "residuename1 residuename2 residuenameM" N
 ```
+
 	Where N is a positive integer. Residue names are given in 3 letter format (ASP, HIS, etc). The name for the water molecules will vary with the force-field used (SOL, HOH, WAT, etc). Distances of a residue with itself will not be considered.   
+
 
 * WithinCutoff: Similar to the previous but returns the number of residues of the type residuename1 or residuename2, etc within R Angstroms of selection in each frame.
 
