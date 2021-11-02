@@ -45,7 +45,6 @@ import (
 	"github.com/rmera/gochem/amberold"
 	"github.com/rmera/gochem/dcd"
 	v3 "github.com/rmera/gochem/v3"
-	"github.com/rmera/gochem/xtc"
 	"github.com/rmera/scu"
 	"gonum.org/v1/gonum/mat"
 
@@ -110,7 +109,7 @@ func main() {
 	var traj chem.Traj
 	switch *format {
 	case 0:
-		traj, err = xtc.New(args[2])
+		traj, err = OpenXTC(args[2]) //just a trick to offer
 		if err != nil {
 			panic(err.Error())
 		}
