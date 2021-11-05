@@ -147,6 +147,8 @@ z = b = np.arange(0, 3, .02)
 c = np.exp(z)
 d = c[::-1]
 
+# changing the rc parameters and plotting a line plot
+plt.rcParams['figure.figsize'] = [10, 5]
 # Create plots with pre-defined labels.
 fig, ax = plt.subplots()
 
@@ -162,6 +164,11 @@ if yrange:
 
 if a.rmsf:
     plt.xlabel("Residue number")
+    aafreq=20
+    plt.xticks(np.arange(1,len(x),aafreq)) # We want more ticks in this case, as we need to pinpoint each residue
+   # plt.rcParams['figure.figsize'] = [8, 4] # we need more space also
+
+
 plt.ylabel(prop)
 if hist:
     plt.xlabel(prop)
@@ -170,7 +177,9 @@ if hist:
 x2=x
 
 
-ax.plot(xhigh,yhigh,"g*") 
+ax.plot(xhigh,yhigh,"g*")
+
+
 
 
 for i,y in enumerate(ys):
