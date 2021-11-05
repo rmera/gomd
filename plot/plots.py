@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+
+#This is on the verge of what is the acceptable size for a "simple" script.
+#More functionality, and I'll have to refactor the code into functions and whatnot.
+
 from __future__ import print_function
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,6 +12,8 @@ import argparse
 p = argparse.ArgumentParser()
 
 p.add_argument("fname", type=str, help="Input file, gomd format")
+p.add_argument("--f2", type=str, help="Second input file, gomd format. This option will only work if both input files have one column, and both files must have the same amount of data points.", default="")
+
 p.add_argument("-c",type=int, help="Columns in the gomd files, not counting the time (i.e first) column",default=1)
 p.add_argument("--tbf", type=float, help="delta time between frames, if applicable", default=1)
 p.add_argument("--xlabel", type=str, help="Label for the X axis", default="Time")
@@ -72,7 +78,10 @@ if a.histogram:
 extension=a.fname.split(".")[-1]
 fin=open(a.fname,"r")
 
-x=[]
+fins=[fin]
+
+
+x=[[]]
 ys=[]
 
 
@@ -83,20 +92,40 @@ ys=[]
 if a.onlyplot==-1:
     for i in range(a.c):
         ys.append([])
+
 else:
     ys.append([])
 
-for line in fin:
-    if line.startswith("@") or line.startswith("&") or line.startswith("#"):
-        continue
-    fields=line.split()
-    x.append(float(fields[0])*a.tbf)
-    for i,v in enumerate(fields[1:]):
-        if a.onlyplot==-1:
-            ys[i].append(float(v))
-        elif (i+1)==a.onlyplot:
-            ys[0].append(float(v))
 
+# Here we handle the case of a second data file
+if a.f2!="":
+    print("You have given 2 input files. Note that this is only supported if both files have one data column each, and the same number of data points. Both files also need to have the same extension.")
+    fin2=open(a.f2,"r")
+    ys.append([])
+    x=[[],[]]
+    if a.tags=="":
+       tagslist.append(str(i+1))
+    f1=a.fname.replace("."+extension,"")
+    f2=a.f2.replace("."+extension,"")
+    a.fname=f1+"_"+f2+"."+extension #a little Frankenstein monster.
+
+fins.append(fin2)
+
+
+for j,fin in enumerate(fins):
+    for line in fin:
+        if line.startswith("@") or line.startswith("&") or line.startswith("#"):
+            continue
+        fields=line.split()
+        x[j].append(float(fields[0])*a.tbf)
+        for i,v in enumerate(fields[1:]):
+            if a.onlyplot==-1:
+                ys[j+i].append(float(v))
+            elif (i+1)==a.onlyplot:
+                ys[0].append(float(v))
+
+
+x=x[0] #We assume that both files have the same amount of datapoints, 
 #from the x coordinates we got before, we
 #now get the y coordinates that are to be highlighted
 #then we plot this pair with some exotic gliph
