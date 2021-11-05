@@ -108,8 +108,7 @@ if a.f2!="":
     f1=a.fname.replace("."+extension,"")
     f2=a.f2.replace("."+extension,"")
     a.fname=f1+"_"+f2+"."+extension #a little Frankenstein monster.
-
-fins.append(fin2)
+    fins.append(fin2)
 
 
 for j,fin in enumerate(fins):
