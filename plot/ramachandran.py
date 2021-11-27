@@ -37,7 +37,7 @@ axes.set_xlim([-180,180])
 axes.set_ylim([-180,180])
 
 
-plt.scatter(nphi,npsi,c=nframe,marker="+",cmap=cmap) #.reversed())
+plt.scatter(nphi,npsi,c=nframe,marker="+",alpha=0.1,cmap=cmap) #.reversed())
 
 
 
