@@ -181,6 +181,9 @@ func main() {
 		f = Shape(mol, args[3:])
 	} else if task == "PlanesAngle" {
 		f = PlanesAngle(mol, args[3:])
+	} else if task == "InterByRes" {
+		f = InterByRes(mol, args[3:])
+
 	} else {
 		fmt.Println("Args:", args)
 		panic("Task parameter invalid or not present" + args[0])
