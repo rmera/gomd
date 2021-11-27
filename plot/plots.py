@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #This is on the verge of what is the acceptable size for a "simple" script.
 #More functionality, and I'll have to refactor the code into functions and whatnot.
@@ -13,15 +13,18 @@ p = argparse.ArgumentParser()
 
 p.add_argument("fname", type=str, help="Input file, gomd format")
 p.add_argument("--f2", type=str, help="Second input file, gomd format. This option will only work if both input files have one column, and both files must have the same amount of data points.", default="")
+p.add_argument("--unitc", type=float, help="Unit conversion factor for _all_ the Y-axis data", default=1)
 
 p.add_argument("-c",type=int, help="Columns in the gomd files, not counting the time (i.e first) column",default=1)
 p.add_argument("--tbf", type=float, help="delta time between frames, if applicable", default=1)
 p.add_argument("--xlabel", type=str, help="Label for the X axis", default="Time")
-tagsstring=p.add_argument("--tags", type=str, help="Tags for the Y axis and for each plotted thing,",default="")
+tagsstring=p.add_argument("--tags", type=str, help="Tags for the Y axis and for each plotted thing, separated by commas",default="")
 p.add_argument("--onlyplot",type=int,help="Print only the Nth column versus the first", default=-1)
 p.add_argument("--runav",type=int,help="Use a Running average with N-values window", default=-1)
 p.add_argument("--histogram", type=bool,help="Plot an histogram of the values", default=False)
 p.add_argument("--cdf", type=bool,help="Plot the CDF of the values, only applicable if the --histogram flag is also given"  , default=False)
+p.add_argument("--diff", type=bool, help="Plot the difference between 2 sets of values (1st - 2nd)",default=False)
+
 p.add_argument("--tu", type=str,help="Time units" , default="ns")
 p.add_argument("--rmsf", type=bool, help="plot a rmsf run",default=False)
 p.add_argument("--highlight", type=str, help="X values to highlight, give as a list of numbers separated by spaces, all surrounded by a set of quotation marks",default="")
@@ -119,9 +122,9 @@ for j,fin in enumerate(fins):
         x[j].append(float(fields[0])*a.tbf)
         for i,v in enumerate(fields[1:]):
             if a.onlyplot==-1:
-                ys[j+i].append(float(v))
+                ys[j+i].append(float(v)*a.unitc)
             elif (i+1)==a.onlyplot:
-                ys[0].append(float(v))
+                ys[0].append(float(v)*a.unitc)
 
 
 x=x[0] #We assume that both files have the same amount of datapoints, 
@@ -137,7 +140,7 @@ for i,val in enumerate(x):
 
             
 
-glyphs=["b-","r-","g-","k-","c-","m-","k--","b^-","ro-","g.-","c:"]        
+glyphs=["b-","r-","g-","m-","k-","c-","k--","b^-","ro-","g.-","c:"]        
 
 
 if a.c>len(glyphs):
@@ -169,6 +172,23 @@ if a.rmsf:
    # plt.rcParams['figure.figsize'] = [8, 4] # we need more space also
 
 
+
+
+#plot differences between 2 sets.
+#You have to give exactly 2 sets (1 file with 2 columns, or 2 files with 1 column)
+#both sets need to have the same number of data points.
+#print(len(ys[0])) #############3
+if a.diff:
+    newy=[]
+    for i,v in enumerate(ys[0]):
+        newy.append(v -ys[1][i])
+      #  newy[1].append(0) ##We'll plot zeros as reference.
+    ys=np.array([newy])
+    plt.hlines(0, x[0], x[-1], colors="r", linestyles='dashed')
+    a.fname=a.fname.replace("."+extension,"-diff."+extension) #This will be later use for the png file name.
+#print(len(ys[0]))
+
+
 plt.ylabel(prop)
 if hist:
     plt.xlabel(prop)
@@ -178,9 +198,6 @@ x2=x
 
 
 ax.plot(xhigh,yhigh,"g*")
-
-
-
 
 for i,y in enumerate(ys):
     if a.runav>0:
