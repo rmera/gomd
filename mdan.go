@@ -63,7 +63,6 @@ func main() {
 	fixGromacs := flag.Bool("fixGMX", false, "Gromacs PDB numbering issue with more than 10000 residues will be fixed and a new PDB written")
 	superTraj := flag.Bool("super", false, "No analysis is performed. Instead, the trajectory is superimposed to the reference structure")
 	tosuper := flag.String("tosuper", "", "The atoms to be used of the superposition, if that is to be performed")
-	format := flag.Int("format", 0, "0 for xtc (default), 1 for OldAmber (crd), 2 for dcd (NAMD),3 for multi PDB, 4 for multi XYZ")
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage:\n  %s: [flags] task geometry.pdb trajectory.xtc selection1 selection2 ... selectionN", os.Args[0])
 		flag.PrintDefaults()
@@ -107,28 +106,30 @@ func main() {
 		super = true
 	}
 	var traj chem.Traj
-	switch *format {
-	case 0:
+	tmpf := strings.Split(args[2], ".")
+	format := tmpf[len(tmpf)-1]
+	switch strings.ToLower(format) {
+	case "xtc":
 		traj, err = OpenXTC(args[2]) //just a trick to offer
 		if err != nil {
 			panic(err.Error())
 		}
-	case 1:
+	case "crd":
 		traj, err = amberold.New(args[2], mol.Len(), false)
 		if err != nil {
 			panic(err.Error())
 		}
-	case 2:
+	case "dcd":
 		traj, err = dcd.New(args[2])
 		if err != nil {
 			panic(err.Error())
 		}
-	case 3:
+	case "pdb":
 		traj, err = chem.PDBFileRead(args[2], false)
 		if err != nil {
 			panic(err.Error())
 		}
-	case 4:
+	case "xyz":
 		traj, err = chem.XYZFileRead(args[2])
 		if err != nil {
 			panic(err.Error())
