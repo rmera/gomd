@@ -40,37 +40,44 @@ import (
 	"math"
 
 	chem "github.com/rmera/gochem"
+	"github.com/rmera/gochem/dcd"
 	v3 "github.com/rmera/gochem/v3"
 	//	"sort"
 )
 
-func Super(mol *chem.Molecule, args []string, target *[]*v3.Matrix) func(coord *v3.Matrix) []float64 {
+//Returns a function that superimposes each frame of a trajectory to the reference structure using the given atom,
+//writing a DCD trajectory witht he result
+func Super(mol *chem.Molecule, args []string, indexes []int) func(coord *v3.Matrix) []float64 {
 	//	fmt.Println("Use: MDan RMSD sel1 sel2...")
 	argslen := len(args)
-	if argslen < 1 {
-		panic("Super: Not enough arguments, need exactly one!")
+	var err error
+	var neededargs int = 1
+	if indexes == nil {
+		neededargs = 2
+		if argslen < 1 {
+			panic("Super: Got neither a selection nor a set of indexes!")
+		}
+		indexes, err = sel2atoms(mol, args[0])
+		if err != nil {
+			panic("Super: sel2atoms:" + err.Error())
+		}
 	}
-	indexes, err := sel2atoms(mol, args[0])
-	if err != nil {
-		panic("Super: sel2atoms:" + err.Error())
+	wname := "superimposed.dcd"
+	if argslen == neededargs {
+		wname = args[argslen-1]
 	}
+	wtraj, err := dcd.NewWriter(wname, mol.Len()) //I can't close this, sorry :D
 	ret := func(coord *v3.Matrix) []float64 {
 		super, err := chem.Super(coord, mol.Coords[0], indexes, indexes)
 		if err != nil {
 			panic("super: " + err.Error())
 		}
-		*target = append(*target, super)
+		wtraj.WNext(super)
 		return []float64{0.0} //meaningless
 	}
 	return ret
 }
 
-//smemRMSD calculates the RMSD between test and template, considering only the atoms
-//present in the testlst and templalst for each object, respectively.
-//It does not superimpose the objects.
-//To save memory, it asks for the temporary matrix it needs to be supplied:
-//tmp must be Nx3 where N is the number
-//of elements in testlst and templalst
 func sSuper(ctest, ctempla, tmp *v3.Matrix) (float64, error) {
 	if ctest.NVecs() != ctempla.NVecs() || tmp.NVecs() != ctest.NVecs() {
 		return -1, fmt.Errorf("memRMSD: Ill formed matrices for memRMSD calculation")
@@ -79,4 +86,17 @@ func sSuper(ctest, ctempla, tmp *v3.Matrix) (float64, error) {
 	rmsd := tmp.Norm(2)
 	return rmsd / math.Sqrt(float64(ctest.NVecs())), nil
 
+}
+
+//Returns a function that sums the position of each atom over over the trajectory and puts it into
+//target, while saving the total frames read in the trajectory into N, so the average structure over
+//the trajectory can be later obtained.
+//I am a bit concerned about overflowing the float64s  in target
+func Average(mol *chem.Molecule, target *v3.Matrix, N *int) func(coord *v3.Matrix) []float64 {
+	ret := func(coord *v3.Matrix) []float64 {
+		target.Add(coord, target)
+		*N++
+		return []float64{0.0} //meaningless
+	}
+	return ret
 }

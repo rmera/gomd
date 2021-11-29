@@ -38,8 +38,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"math"
 	"os"
+
+	"github.com/rmera/gochem/align"
 
 	chem "github.com/rmera/gochem"
 	"github.com/rmera/gochem/amberold"
@@ -62,6 +65,8 @@ func main() {
 	begin := flag.Int("begin", 1, "The frame from where to start reading.")
 	fixGromacs := flag.Bool("fixGMX", false, "Gromacs PDB numbering issue with more than 10000 residues will be fixed and a new PDB written")
 	superTraj := flag.Bool("super", false, "No analysis is performed. Instead, the trajectory is superimposed to the reference structure")
+	lovo := flag.Int("lovo", -1, "if >=0, uses LOVO to determine the residues used in a superposition. The number becomes the frames skipped during the LOVO calculation. See (and cite) 10.1371/journal.pone.0119264. This fag is only valid if the flag 'super' is set, and invalidates the 'tosuper' flag")
+	lovolimit := flag.Float64("lovolimit", 1.0, "Only residues with a final RMSD less that this value (form a LOVO calculation), in A, will be considered for alignment. Only meaningful if the flag 'lovo' is set to >=0")
 	tosuper := flag.String("tosuper", "", "The atoms to be used of the superposition, if that is to be performed")
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage:\n  %s: [flags] task geometry.pdb trajectory.xtc selection1 selection2 ... selectionN", os.Args[0])
@@ -71,7 +76,7 @@ func main() {
 	flag.Parse()
 	args := flag.Args()
 	//We do this first, as, if this task is given, we don't need any other parameter.
-	if strings.Contains(args[0], "electionHelp") {
+	if strings.Contains(strings.ToLower(args[0]), "selectionhelp") {
 		fmt.Printf("The selections are defined in the following way: \"RESID1,RESID2,RESID3-RESID3+N,RESIDN CHAIN ATNAME1,ATNAME2\"\nRESID are residue numbers. They can be separated by commas or, to specify a range, with dashes: 12,13,120,125-128,145 That would select the residues 12,13,120,125,126,127,128,145\nCHAIN must be a chain identifier such as \"A\". If chain is \"ALL\", every chain will be used. \nATNAME is a PDB atom name such as CA (alpha carbon). Hydrogen names may vary with the forcefield employed. if ALL is given, as the first atom name, all atoms in the selected residues will be consiered.\n")
 		os.Exit(0)
 	}
@@ -137,33 +142,34 @@ func main() {
 
 	}
 	if *superTraj {
-		target := make([]*v3.Matrix, 0, 500) //I just put any large number, after all, each element is just a pointer.
-		f = Super(mol, args[3:], &target)
-		mdan(traj, mol.Coords[0], f, *skip, *begin, super, superlist)
-		fmt.Println("To the PDB file", len(target), mol.Len()) //////////////////
-		mol.Coords = target
-		bfacs := make([][]float64, 0, len(target))
-		increment := 99.0 / float64(len(target))
-		//We will set the bfactors for easy coloring by trajectory.
-		for i, _ := range target {
-			b := make([]float64, 0, mol.Len())
-			for j := 0; j < mol.Len(); j++ {
-				//	fmt.Println(0.0 + float64(i)*increment) ///////////////////
-				b = append(b, 0.0+float64(i)*increment)
+		if *lovo >= 0 {
+			fmt.Printf("LOVO alignment requested. Please cite: 10.1371/journal.pone.0119264\n")
+			opt := align.DefaultOptions()
+			opt.LessThanRMSD = *lovolimit
+			name, chain := sel2nameandchain(args[3])
+			opt.AtomNames = name
+			opt.Chains = chain
+			opt.Begin = *begin
+			opt.Skip = *lovo
+			fmt.Println(opt.AtomNames, opt.Chains, opt.Skip, opt.LessThanRMSD) /////////////////////
+			fmt.Printf("Starting LOVO calculation. You might as well go for a coffee.\n")
+			lovoret, err := align.LOVO(mol, mol.Coords[0], args[2], opt)
+			fmt.Printf("LOVO calculation finished.\n")
+			if err == nil {
+				superlist = lovoret.Natoms //if it works, works
+			} else {
+				log.Printf("Couldn't obtain LOVO indexes for the superposition: %s", err.Error())
 			}
-			bfacs = append(bfacs, b)
+
 		}
-		out, err := os.Create("PDBTraj.pdb")
-		if err != nil {
-			panic("os.Create " + err.Error())
-		}
-		defer out.Close()
-		err = chem.MultiPDBWrite(out, target, mol, bfacs)
-		if err != nil {
-			panic(err.Error())
-		}
+		f = Super(mol, args[3:], superlist)
+		mdan(traj, mol.Coords[0], f, *skip, *begin, false, nil)
 		return
 	}
+
+	//only used for the Average task
+	var target *v3.Matrix
+	var N int
 
 	task := args[0]
 	if task == "Distance" {
@@ -184,12 +190,21 @@ func main() {
 		f = PlanesAngle(mol, args[3:])
 	} else if task == "InterByRes" {
 		f = InterByRes(mol, args[3:])
-
+	} else if task == "Average" {
+		target = v3.Zeros(mol.Len())
+		f = Average(mol, target, &N)
 	} else {
 		fmt.Println("Args:", args)
 		panic("Task parameter invalid or not present" + args[0])
 	}
 	mdan(traj, mol.Coords[0], f, *skip, *begin, super, superlist)
+	if args[0] == "Average" && target != nil && N != 0 {
+		cuoc := 1.0 / float64(N)
+		target.Scale(cuoc, target)
+		outname := strings.Replace(args[1], ".pdb", "_Average.pdb", -1)
+		chem.PDBFileWrite(outname, target, mol, nil)
+
+	}
 }
 
 /********General helper functions************/
@@ -239,6 +254,23 @@ func ones(size int) []float64 {
 		slice[k] = 1.0
 	}
 	return slice
+}
+
+func sel2nameandchain(sel string) ([]string, []string) {
+	var chains []string
+	var names []string
+	f := strings.Fields(sel)
+	//first the chains
+	//if chain is set to "ALL" we just return a nil slice, which means "consider all chains" for the LOVO function.
+	if f[1] != "ALL" {
+		chains = strings.Split(f[1], ",")
+	}
+	if f[2] == "ALL" {
+		names = []string{"CA"} //yep, not having that "ALL" crap xD
+	} else {
+		names = strings.Split(f[2], ",")
+	}
+	return names, chains
 }
 
 //Language for the selection, not very sophisticated:
