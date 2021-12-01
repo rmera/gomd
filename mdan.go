@@ -43,6 +43,7 @@ import (
 	"os"
 
 	"github.com/rmera/gochem/align"
+	"github.com/rmera/gochem/stf"
 
 	chem "github.com/rmera/gochem"
 	"github.com/rmera/gochem/amberold"
@@ -139,6 +140,11 @@ func main() {
 		if err != nil {
 			panic(err.Error())
 		}
+	case "stz":
+		traj, _, err = stf.New(args[2])
+		if err != nil {
+			panic(err.Error())
+		}
 
 	}
 	if *superTraj {
@@ -162,7 +168,9 @@ func main() {
 			}
 
 		}
-		f = Super(mol, args[3:], superlist)
+		var toclose Closer
+		f, toclose = Super(mol, args[3:], superlist)
+		defer toclose.Close()
 		mdan(traj, mol.Coords[0], f, *skip, *begin, false, nil)
 		return
 	}

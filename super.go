@@ -40,14 +40,18 @@ import (
 	"math"
 
 	chem "github.com/rmera/gochem"
-	"github.com/rmera/gochem/dcd"
+	"github.com/rmera/gochem/stf"
 	v3 "github.com/rmera/gochem/v3"
 	//	"sort"
 )
 
+type Closer interface {
+	Close()
+}
+
 //Returns a function that superimposes each frame of a trajectory to the reference structure using the given atom,
 //writing a DCD trajectory witht he result
-func Super(mol *chem.Molecule, args []string, indexes []int) func(coord *v3.Matrix) []float64 {
+func Super(mol *chem.Molecule, args []string, indexes []int) (func(coord *v3.Matrix) []float64, Closer) {
 	//	fmt.Println("Use: MDan RMSD sel1 sel2...")
 	argslen := len(args)
 	var err error
@@ -62,11 +66,11 @@ func Super(mol *chem.Molecule, args []string, indexes []int) func(coord *v3.Matr
 			panic("Super: sel2atoms:" + err.Error())
 		}
 	}
-	wname := "superimposed.dcd"
+	wname := "superimposed.stz"
 	if argslen == neededargs {
 		wname = args[argslen-1]
 	}
-	wtraj, err := dcd.NewWriter(wname, mol.Len()) //I can't close this, sorry :D
+	wtraj, err := stf.NewWriter(wname, mol.Len(), nil) //I can't close this, sorry :D
 	ret := func(coord *v3.Matrix) []float64 {
 		super, err := chem.Super(coord, mol.Coords[0], indexes, indexes)
 		if err != nil {
@@ -75,7 +79,7 @@ func Super(mol *chem.Molecule, args []string, indexes []int) func(coord *v3.Matr
 		wtraj.WNext(super)
 		return []float64{0.0} //meaningless
 	}
-	return ret
+	return ret, wtraj
 }
 
 func sSuper(ctest, ctempla, tmp *v3.Matrix) (float64, error) {
@@ -85,7 +89,6 @@ func sSuper(ctest, ctempla, tmp *v3.Matrix) (float64, error) {
 	tmp.Sub(ctest, ctempla)
 	rmsd := tmp.Norm(2)
 	return rmsd / math.Sqrt(float64(ctest.NVecs())), nil
-
 }
 
 //Returns a function that sums the position of each atom over over the trajectory and puts it into
