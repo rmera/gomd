@@ -30,7 +30,7 @@ package main
 
 import (
 	chem "github.com/rmera/gochem"
-	"github.com/rmera/gochem/xtc"
+	"github.com/rmera/gochem/traj/xtc"
 )
 
 func OpenXTC(name string) (chem.Traj, error) {

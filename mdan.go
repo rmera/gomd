@@ -42,12 +42,11 @@ import (
 	"math"
 	"os"
 
-	"github.com/rmera/gochem/align"
-	"github.com/rmera/gochem/stf"
-
 	chem "github.com/rmera/gochem"
-	"github.com/rmera/gochem/amberold"
-	"github.com/rmera/gochem/dcd"
+	"github.com/rmera/gochem/align"
+	"github.com/rmera/gochem/traj/amberold"
+	"github.com/rmera/gochem/traj/dcd"
+	"github.com/rmera/gochem/traj/stf"
 	v3 "github.com/rmera/gochem/v3"
 	"github.com/rmera/scu"
 	"gonum.org/v1/gonum/mat"
@@ -178,27 +177,29 @@ func main() {
 	//only used for the Average task
 	var target *v3.Matrix
 	var N int
+	//used for rmsf
+	var rmsf *rmsfstr
 
-	task := args[0]
-	if task == "Distance" {
+	task := strings.ToLower(args[0])
+	if task == "distance" {
 		f = Distance(mol, args[3:])
-	} else if task == "RMSD" {
+	} else if task == "rmsd" {
 		f = RMSD(mol, args[3:])
-	} else if task == "Ramachandran" {
+	} else if task == "ramachandran" {
 		f = Ramachandran(mol, args[3:])
-	} else if task == "ClosestN" {
+	} else if task == "closestn" {
 		f = ClosestN(mol, args[3:])
-	} else if task == "RMSF" {
-		f = RMSF(mol, args[3:])
-	} else if task == "WithinCutoff" {
+	} else if task == "rmsf" {
+		f, rmsf = RMSF(mol, args[3:])
+	} else if task == "withincutoff" {
 		f = WithinCutoff(mol, args[3:])
-	} else if task == "Shape" {
+	} else if task == "shape" {
 		f = Shape(mol, args[3:])
-	} else if task == "PlanesAngle" {
+	} else if task == "planesangle" {
 		f = PlanesAngle(mol, args[3:])
-	} else if task == "InterByRes" {
+	} else if task == "interbyres" {
 		f = InterByRes(mol, args[3:])
-	} else if task == "Average" {
+	} else if task == "average" {
 		target = v3.Zeros(mol.Len())
 		f = Average(mol, target, &N)
 	} else {
@@ -206,12 +207,19 @@ func main() {
 		panic("Task parameter invalid or not present" + args[0])
 	}
 	mdan(traj, mol.Coords[0], f, *skip, *begin, super, superlist)
-	if args[0] == "Average" && target != nil && N != 0 {
+	if task == "average" && target != nil && N != 0 {
 		cuoc := 1.0 / float64(N)
 		target.Scale(cuoc, target)
 		outname := strings.Replace(args[1], ".pdb", "_Average.pdb", -1)
 		chem.PDBFileWrite(outname, target, mol, nil)
 
+	}
+	if task == "rmsf" {
+		outp, err := os.Create("RMSF.dat")
+		if err != nil {
+			log.Printf("Couldn't open RMSF file for writing: %s", err.Error())
+		}
+		outp.WriteString(rmsf.String())
 	}
 }
 
@@ -448,7 +456,16 @@ func memRMSD(ctest, ctempla, tmp *v3.Matrix) (float64, error) {
 
 //RMSF returns a function that will calculate the RMSF of as many selections as requested from a given set of coordinates against the coordinates
 //in the mol object.
-func RMSF(mol *chem.Molecule, args []string) func(coord *v3.Matrix) []float64 {
+
+type rmsfstr struct {
+	data []string
+}
+
+func (r *rmsfstr) String() string {
+	return strings.Join(r.data, "\n")
+}
+
+func RMSF(mol *chem.Molecule, args []string) (func(coord *v3.Matrix) []float64, *rmsfstr) {
 	//	fmt.Println("Use: MDan RMSD sel1 sel2...")
 	argslen := len(args)
 	if argslen < 1 {
@@ -480,11 +497,13 @@ func RMSF(mol *chem.Molecule, args []string) func(coord *v3.Matrix) []float64 {
 		test = append(test, temptest)
 		//stdevs=append(stdevs,make([]float64,0,len(v)))
 	}
+	rmsf := new(rmsfstr)
 	ret := func(coord *v3.Matrix) []float64 {
+		rmsf.data = make([]string, 0, len(indexes[0]))
 		frames++
 		numbers := 0
-		output, _ := os.Create("RMSF.dat") //A bit crazy, but since I don't know when does the traj end, I have to write a "current" RMSF for each frame ( save for the first 2). I do it in the same file, which means that for each frame, the file gets overwritten.
-		defer output.Close()
+		//	output, _ := os.Create("RMSF.dat") //A bit crazy, but since I don't know when does the traj end, I have to write a "current" RMSF for each frame ( save for the first 2). I do it in the same file, which means that for each frame, the file gets overwritten.
+		//		defer output.Close()
 		for i, v := range indexes {
 			test[i].SomeVecs(coord, v) //the refs are already correctly filled
 			cm[i].Add(cm[i], test[i])
@@ -511,11 +530,11 @@ func RMSF(mol *chem.Molecule, args []string) func(coord *v3.Matrix) []float64 {
 			for i := 0; i < len(temp); i++ {
 				outstr = outstr + fmt.Sprintf("%8.3f ", math.Sqrt(temp[i].VecView(j).Norm(2)))
 			}
-			output.WriteString(outstr + "\n")
+			rmsf.data = append(rmsf.data, outstr)
 		}
 		return []float64{0.0} //Dummy output
 	}
-	return ret
+	return ret, rmsf
 }
 
 //********The Distance family functions**********//

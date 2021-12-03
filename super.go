@@ -40,8 +40,9 @@ import (
 	"math"
 
 	chem "github.com/rmera/gochem"
-	"github.com/rmera/gochem/stf"
 	v3 "github.com/rmera/gochem/v3"
+
+	"github.com/rmera/gochem/traj/stf"
 	//	"sort"
 )
 
