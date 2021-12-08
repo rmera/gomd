@@ -56,9 +56,8 @@ func Super(mol *chem.Molecule, args []string, indexes []int) (func(coord *v3.Mat
 	//	fmt.Println("Use: MDan RMSD sel1 sel2...")
 	argslen := len(args)
 	var err error
-	var neededargs int = 1
+	var neededargs int = 2
 	if indexes == nil {
-		neededargs = 2
 		if argslen < 1 {
 			panic("Super: Got neither a selection nor a set of indexes!")
 		}
@@ -68,7 +67,7 @@ func Super(mol *chem.Molecule, args []string, indexes []int) (func(coord *v3.Mat
 		}
 	}
 	wname := "superimposed.stz"
-	if argslen == neededargs {
+	if argslen >= neededargs {
 		wname = args[argslen-1]
 	}
 	wtraj, err := stf.NewWriter(wname, mol.Len(), nil) //I can't close this, sorry :D
