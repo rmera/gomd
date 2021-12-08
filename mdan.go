@@ -58,19 +58,18 @@ import (
 
 ////use:  program [-skip=number -begin=number2] Task pdbname xtcname skip sel1 sel2 .... selN. Some tasks may require that N is odd that n is even.
 func main() {
-	//The skip options
+	pymol := flag.Bool("pymol", false, "Only for LOVO fit. Prints a command to create a pymol selection with the residues selected by the LOVO procedure.")
+
 	skip := flag.Int("skip", 0, "How many frames to skip between reads.")
 	enforcemass := flag.Bool("enforcemass", false, "For tasks requiring atomic masses, exit the program if some masses are not available. Otherwise all masses are set to 1.0 if one or more values are not found.")
-
 	begin := flag.Int("begin", 1, "The frame from where to start reading.")
-	fixGromacs := flag.Bool("fixGMX", false, "Gromacs PDB numbering issue with more than 10000 residues will be fixed and a new PDB written")
-	superTraj := flag.Bool("super", false, "No analysis is performed. Instead, the trajectory is superimposed to the reference structure")
-	lovo := flag.Int("lovo", -1, "if >=0, uses LOVO to determine the residues used in a superposition. The number becomes the frames skipped during the LOVO calculation. See (and cite) 10.1371/journal.pone.0119264. This fag is only valid if the flag 'super' is set, and invalidates the 'tosuper' flag")
+	lovo := flag.Int("lovo", -1, "if >=0, uses LOVO to determine the residues used in a superposition. The number becomes the frames skipped during the LOVO calculation. See (and cite) 10.1371/journal.pone.0119264. This flag invalidates the 'tosuper' flag")
 	lovolimit := flag.Float64("lovolimit", 1.0, "Only residues with a final RMSD less that this value (form a LOVO calculation), in A, will be considered for alignment. Only meaningful if the flag 'lovo' is set to >=0")
-	tosuper := flag.String("tosuper", "", "The atoms to be used of the superposition, if that is to be performed")
+	tosuper := flag.String("tosuper", "", "The atoms to be used of the superposition, if that is to be performed. Given as a regular goMD selection.")
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage:\n  %s: [flags] task geometry.pdb trajectory.xtc selection1 selection2 ... selectionN", os.Args[0])
 		flag.PrintDefaults()
+		fmt.Fprintf(flag.CommandLine.Output(), "\nAvailable tasks:  fixgmx, stop, distance, rmsd, ramachandran, closestn, rmsf, withincutoff, shape, planesangle, interbyres, average, super")
 	}
 
 	flag.Parse()
@@ -81,19 +80,14 @@ func main() {
 		os.Exit(0)
 	}
 
-	//	println("SKIP", *skip, *begin, args) ///////////////////////////
 	var f func(*v3.Matrix) []float64
 	mol, err := chem.PDBFileRead(args[1], false)
 	if err != nil {
 		panic(err.Error())
 	}
-	if *fixGromacs || strings.Contains(args[0], "ixGMX") {
-		chem.FixGromacsPDB(mol)
-		chem.PDBFileWrite("Fixed-"+args[1], mol.Coords[0], mol, nil)
-		os.Exit(0) //no reason to keep going.
-	}
 	//If we don't find one or more masses, we just set them all to 1.0
-	//unless you told us not to.
+	//unless you told us not to. In the latter case, whatever task that
+	//required massess wil crash.
 	_, err = mol.Masses()
 	if err != nil && !*enforcemass {
 		for i := 0; i < mol.Len(); i++ {
@@ -101,14 +95,13 @@ func main() {
 			at.Mass = 1.0
 		}
 	}
+
 	var superlist []int
-	super := false
 	if *tosuper != "" {
 		superlist, err = sel2atoms(mol, *tosuper)
 		if err != nil {
 			panic("Wrong superposition list")
 		}
-		super = true
 	}
 	var traj chem.Traj
 	tmpf := strings.Split(args[2], ".")
@@ -146,32 +139,35 @@ func main() {
 		}
 
 	}
-	if *superTraj {
-		if *lovo >= 0 {
-			fmt.Printf("LOVO alignment requested. Please cite: 10.1371/journal.pone.0119264\n")
-			opt := align.DefaultOptions()
-			opt.LessThanRMSD = *lovolimit
-			name, chain := sel2nameandchain(args[3])
-			opt.AtomNames = name
-			opt.Chains = chain
-			opt.Begin = *begin
-			opt.Skip = *lovo
-			fmt.Println(opt.AtomNames, opt.Chains, opt.Skip, opt.LessThanRMSD) /////////////////////
-			fmt.Printf("Starting LOVO calculation. You might as well go for a coffee.\n")
-			lovoret, err := align.LOVO(mol, mol.Coords[0], args[2], opt)
-			fmt.Printf("LOVO calculation finished.\n")
-			if err == nil {
-				superlist = lovoret.Natoms //if it works, works
-			} else {
-				log.Printf("Couldn't obtain LOVO indexes for the superposition: %s", err.Error())
-			}
+	var super bool = false
 
+	//This is the only pre-processing we do.
+	//You can request the LOVO procedure on its own (use the "stop" task, which does nothing) or use it to determine
+	//the atoms for the "super" task.
+	if *lovo >= 0 {
+		fmt.Printf("#LOVO alignment requested. Please cite:\n# 10.1371/journal.pone.0119264\n# 10.1186/1471-2105-8-306\n")
+		opt := align.DefaultOptions()
+		opt.LessThanRMSD = *lovolimit
+		name, chain := sel2nameandchain(args[3])
+		opt.AtomNames = name
+		opt.Chains = chain
+		opt.Begin = *begin
+		opt.Skip = *lovo
+		fmt.Println(opt.AtomNames, opt.Chains, opt.Skip, opt.LessThanRMSD) /////////////////////
+		fmt.Printf("# Starting LOVO calculation. You might as well go for a coffee.\n")
+		lovoret, err := align.LOVO(mol, mol.Coords[0], args[2], opt)
+		fmt.Printf("# LOVO calculation finished.\n")
+		if err == nil {
+			superlist = lovoret.Natoms //if it works, works
+		} else {
+			log.Printf("Couldn't obtain LOVO indexes for the superposition: %s", err.Error())
 		}
-		var toclose Closer
-		f, toclose = Super(mol, args[3:], superlist)
-		defer toclose.Close()
-		mdan(traj, mol.Coords[0], f, *skip, *begin, false, nil)
-		return
+		//I'd like to have an option for VMD also, but don't know the selection 'language' there.
+		fmt.Println("# LOVO atom indexes:", lovoret)
+		if *pymol {
+			fmt.Println("\n# PyMOL selection for LOVO-selected residues: ", lovoret.PyMOLSel())
+		}
+
 	}
 
 	//only used for the Average task
@@ -181,32 +177,48 @@ func main() {
 	var rmsf *rmsfstr
 
 	task := strings.ToLower(args[0])
-	if task == "distance" {
+	switch task {
+	case "fixgmx":
+		chem.FixGromacsPDB(mol)
+		chem.PDBFileWrite("Fixed-"+args[1], mol.Coords[0], mol, nil)
+		return
+	case "stop":
+		return //nothing wrong, just something to use if you just want to do some of the pre-processing things
+	case "distance":
 		f = Distance(mol, args[3:])
-	} else if task == "rmsd" {
+	case "rmsd":
 		f = RMSD(mol, args[3:])
-	} else if task == "ramachandran" {
+	case "ramachandran":
 		f = Ramachandran(mol, args[3:])
-	} else if task == "closestn" {
+	case "closestn":
 		f = ClosestN(mol, args[3:])
-	} else if task == "rmsf" {
+	case "rmsf":
 		f, rmsf = RMSF(mol, args[3:])
-	} else if task == "withincutoff" {
+	case "withincutoff":
 		f = WithinCutoff(mol, args[3:])
-	} else if task == "shape" {
+	case "shape":
 		f = Shape(mol, args[3:])
-	} else if task == "planesangle" {
+	case "planesangle":
 		f = PlanesAngle(mol, args[3:])
-	} else if task == "interbyres" {
+	case "interbyres":
 		f = InterByRes(mol, args[3:])
-	} else if task == "average" {
+	case "average":
 		target = v3.Zeros(mol.Len())
 		f = Average(mol, target, &N)
-	} else {
+	case "super":
+		var toclose Closer
+		f, toclose = Super(mol, args[3:], superlist)
+		defer toclose.Close()
+		super = true
+	default:
 		fmt.Println("Args:", args)
-		panic("Task parameter invalid or not present" + args[0])
+		fmt.Println("Task parameter invalid or not present" + args[0])
+		os.Exit(1)
 	}
 	mdan(traj, mol.Coords[0], f, *skip, *begin, super, superlist)
+
+	//Extra post processing needed by some tasks
+
 	if task == "average" && target != nil && N != 0 {
 		cuoc := 1.0 / float64(N)
 		target.Scale(cuoc, target)
@@ -324,9 +336,7 @@ func sel2atoms(mol chem.Atomer, sel string) ([]int, error) {
 			continue
 		}
 		//if there is a "-" in v, we have a bit more work to do.
-		//		println("do I even run?") //////////////////////////////////
 		limits := strings.Split(v, "-")
-		//		println("limits",limits) ///////////////////////
 		llimit, err := strconv.Atoi(limits[0])
 		if err != nil {
 			return nil, err
@@ -335,17 +345,12 @@ func sel2atoms(mol chem.Atomer, sel string) ([]int, error) {
 		if err != nil {
 			return nil, err
 		}
-		//		println("llimit, ulimit", llimit, ulimit)
 		for j := llimit; j <= ulimit; j++ {
 			reslist = append(reslist, j)
 		}
-		//		println(reslist)           ////////////
-		//		for _,v:=range(reslist){ //////////////////
-		//			println(v)          //////////////////
-		//		}               //////////////////////////////
 	}
 	//we get the chain:
-	chain := fields[1]
+	chain := strings.Split(fields[1], ",")
 	//Now we go for the atomslist and chain
 	/*
 		negnames := false
@@ -361,9 +366,8 @@ func sel2atoms(mol chem.Atomer, sel string) ([]int, error) {
 		if !scu.IsInInt(at.MolID, reslist) {
 			continue
 		}
-		//	fmt.Println("selected", at.MolID, reslist[0],reslist[1],reslist[2]) /////////////////////////////////////////
 
-		if (atnames[0] != "ALL" && !scu.IsInString(at.Name, atnames)) || (chain != "ALL" && at.Chain != chain) { //ALL makes all atoms in each residue to be included, or all chains.
+		if (atnames[0] != "ALL" && !scu.IsInString(at.Name, atnames)) || (chain[0] != "ALL" && !scu.IsInString(at.Chain, chain)) { //ALL makes all atoms in each residue to be included, or all chains.
 			continue
 		}
 		ret = append(ret, i)
@@ -391,7 +395,11 @@ func sel2atoms(mol chem.Atomer, sel string) ([]int, error) {
 	return ret, nil
 }
 
-/*****************RMSD family ***********/
+/***************************
+Now some of the Task functions (the rests are in other files)
+****************************/
+
+/**********RMSD family ***********/
 //RMSD returns a function that will calculate the RMSD of as many selections as requested from a given set of coordinates against the coordinates
 //in the mol object.
 func RMSD(mol *chem.Molecule, args []string) func(coord *v3.Matrix) []float64 {
@@ -596,6 +604,8 @@ func Distance(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 	return ret
 }
 
+//Finally the "heart" of goMD, mdan.
+
 //mdan takes a topology, a trajectory object and a function that must take a set of coordinates
 //and a topology and returns a slice of floats. It applies the function to each snapshot of the trajectory.
 //It then, for each snapshot, prints a line with the traj number as first field and the numbers in the returned
@@ -619,7 +629,7 @@ func mdan(traj chem.Traj, ref *v3.Matrix, f func(*v3.Matrix) []float64, skip, be
 				panic(err.Error())
 			}
 		}
-		if (lastread >= 0 && i < lastread+skip) || i < begin-1 { //not so nice check for this twice
+		if (lastread >= 0 && i < lastread+skip) || i < begin-1 { //not so nice having to check for this twice
 			continue
 		}
 		if super {
