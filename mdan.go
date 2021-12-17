@@ -185,6 +185,8 @@ func main() {
 		return //nothing wrong, just something to use if you just want to do some of the pre-processing things
 	case "distance":
 		f = Distance(mol, args[3:])
+	case "angle":
+		f = Angle(mol, args[3:])
 	case "rmsd":
 		f = RMSD(mol, args[3:])
 	case "peratomrmsd":
@@ -399,6 +401,76 @@ func sel2atoms(mol chem.Atomer, sel string) ([]int, error) {
 /***************************
 Now some of the Task functions (the rests are in other files)
 ****************************/
+
+//********The Angle family functions**********//
+
+func Angle(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
+	//	fmt.Println("Use: MDan distance sel1 sel2...")
+	argslen := len(args)
+	if (argslen)%3 != 0 {
+		panic("Distance: Always specity a number of selections that is divisible by 3")
+	}
+	com := make([]bool, 0, argslen/3) //should we use center of mass for this selection?
+	indexes := make([][]int, 0, argslen)
+	for i, v := range args {
+		s, err := sel2atoms(mol, v)
+		if err != nil {
+			panic("Distance: sel2atoms:" + err.Error())
+		}
+		indexes = append(indexes, s)
+		if i >= 2 && (i+1)%3 == 0 { //This ensure that we only check once for each angle "set" (i.e. every 3 selections)
+			//	if len(indexes[i]) > 1 || len(indexes[i-1]) > 1 || len(indexes[i-2]) > 1 {
+			if len(indexes[len(indexes)-1]) > 1 || len(indexes[len(indexes)-2]) > 1 || len(indexes[len(indexes)-3]) > 1 {
+				com = append(com, true)
+			} else {
+				com = append(com, false)
+			}
+		}
+	}
+	//	fmt.Println(len(com), len(indexes), com, indexes) //////////////////////
+	var vec1, vec2, vec3 *v3.Matrix
+
+	//temporary angle vectors
+	a1 := v3.Zeros(1)
+	a2 := v3.Zeros(1)
+
+	var err error
+	//	fmt.Println(com) ////////////////////////////////////
+	ret := func(coord *v3.Matrix) []float64 {
+		angles := make([]float64, 0, len(indexes)/2)
+		for i := 0; i < len(indexes); i = i + 3 { //we process them by triads
+			if com[i/3] == false { //no center of mass indication, we assume taht each selection has one atom
+				vec1 = coord.VecView(indexes[i][0])
+				vec2 = coord.VecView(indexes[i+1][0])
+				vec3 = coord.VecView(indexes[i+2][0])
+			} else {
+				//	println("get to the chooopaaaaa!")
+				t1 := v3.Zeros(len(indexes[i]))
+				t2 := v3.Zeros(len(indexes[i+1]))
+				t3 := v3.Zeros(len(indexes[i+2]))
+
+				vec1, err = centerOfMass(coord, t1, mol, indexes[i])
+				if err != nil {
+					panic("Distance: Func: " + err.Error())
+				}
+				vec2, err = centerOfMass(coord, t2, mol, indexes[i+1])
+				if err != nil {
+					panic("Distance: Func: " + err.Error())
+				}
+				vec3, err = centerOfMass(coord, t3, mol, indexes[i+1])
+				if err != nil {
+					panic("Distance: Func: " + err.Error())
+				}
+
+			}
+			a1.Sub(vec1, vec2)
+			a2.Sub(vec3, vec2)
+			angles = append(angles, chem.Angle(a1, a2)*chem.Rad2Deg)
+		}
+		return angles
+	}
+	return ret
+}
 
 //********The Distance family functions**********//
 
