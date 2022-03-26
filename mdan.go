@@ -40,6 +40,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 
 	chem "github.com/rmera/gochem"
 	"github.com/rmera/gochem/align"
@@ -54,6 +55,43 @@ import (
 	"strconv"
 	"strings"
 )
+
+func formatLOVO(chain string, data []*align.MolIDandChain) string {
+	first := true
+	molids := make([][2]int, 1, 5)
+	molids[0] = [2]int{0, 0}
+	for _, v := range data {
+		if chain != v.Chain() {
+			continue
+		}
+		mid := v.MolID()
+		if first {
+			molids[0][0] = mid
+			molids[0][1] = mid
+			first = false
+			continue
+		}
+		a := len(molids) - 1
+		if mid == molids[a][1]+1 {
+			molids[a][1] = mid
+		} else {
+			molids = append(molids, [2]int{mid, mid})
+		}
+	}
+	ret := ""
+	for _, v := range molids {
+		if v[0] == v[1] {
+			ret = fmt.Sprintf("%s,%d", ret, v[0])
+		} else {
+			ret = fmt.Sprintf("%s,%d-%d", ret, v[0], v[1])
+
+		}
+
+	}
+
+	return fmt.Sprintf("%s %s CA", strings.TrimLeft(ret, ","), chain)
+
+}
 
 ////use:  program [-skip=number -begin=number2] Task pdbname xtcname skip sel1 sel2 .... selN. Some tasks may require that N is odd that n is even.
 func main() {
@@ -161,10 +199,15 @@ func main() {
 		} else {
 			log.Printf("Couldn't obtain LOVO indexes for the superposition: %s", err.Error())
 		}
+		sort.Sort(lovoret)
 		//I'd like to have an option for VMD also, but don't know the selection 'language' there.
 		fmt.Println("# LOVO atom indexes:", lovoret)
 		if *pymol {
 			fmt.Println("\n# PyMOL selection for LOVO-selected residues: ", lovoret.PyMOLSel())
+		}
+		fmt.Println("# LOVO CA indexes in goMD selection format:")
+		for _, v := range chain {
+			fmt.Println(formatLOVO(v, lovoret.Nmols))
 		}
 
 	}
