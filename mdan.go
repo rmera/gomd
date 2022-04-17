@@ -96,7 +96,7 @@ func formatLOVO(chain string, data []*align.MolIDandChain) string {
 ////use:  program [-skip=number -begin=number2] Task pdbname xtcname skip sel1 sel2 .... selN. Some tasks may require that N is odd that n is even.
 func main() {
 	pymol := flag.Bool("pymol", false, "Only for LOVO fit. Prints a command to create a pymol selection with the residues selected by the LOVO procedure.")
-	gmx := flag.Bool("gmx", false, "Only for LOVO fit. Prints a command to create a Gromacs gmx make_ndx selection with the residues selected by the LOVO procedure.")
+	nogmx := flag.Bool("gmx", false, "Only for LOVO fit. Do not print a command to create a Gromacs gmx make_ndx selection with the residues selected by the LOVO procedure. (this is printed by default)")
 
 	skip := flag.Int("skip", 0, "How many frames to skip between reads.")
 	enforcemass := flag.Bool("enforcemass", false, "For tasks requiring atomic masses, exit the program if some masses are not available. Otherwise all masses are set to 1.0 if one or more values are not found.")
@@ -206,7 +206,7 @@ func main() {
 		if *pymol {
 			fmt.Println("\n# PyMOL selection for LOVO-selected residues: ", lovoret.PyMOLSel())
 		}
-		if *gmx {
+		if !*nogmx {
 			fmt.Println("\n# gmx make_ndx selection LOVO-selected residues:\n ")
 			for _, v := range chain {
 				fmt.Println(lovoret.GMX(v))
