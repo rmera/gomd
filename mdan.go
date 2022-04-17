@@ -96,6 +96,7 @@ func formatLOVO(chain string, data []*align.MolIDandChain) string {
 ////use:  program [-skip=number -begin=number2] Task pdbname xtcname skip sel1 sel2 .... selN. Some tasks may require that N is odd that n is even.
 func main() {
 	pymol := flag.Bool("pymol", false, "Only for LOVO fit. Prints a command to create a pymol selection with the residues selected by the LOVO procedure.")
+	gmx := flag.Bool("gmx", false, "Only for LOVO fit. Prints a command to create a Gromacs gmx make_ndx selection with the residues selected by the LOVO procedure.")
 
 	skip := flag.Int("skip", 0, "How many frames to skip between reads.")
 	enforcemass := flag.Bool("enforcemass", false, "For tasks requiring atomic masses, exit the program if some masses are not available. Otherwise all masses are set to 1.0 if one or more values are not found.")
@@ -184,13 +185,13 @@ func main() {
 	if *lovo >= 0 {
 		fmt.Printf("#LOVO alignment requested. Please cite:\n# 10.1371/journal.pone.0119264\n# 10.1186/1471-2105-8-306\n")
 		opt := align.DefaultOptions()
-		opt.LessThanRMSD = *lovolimit
+		opt.LessThanRMSD(*lovolimit)
 		name, chain := sel2nameandchain(args[3])
-		opt.AtomNames = name
-		opt.Chains = chain
-		opt.Begin = *begin
-		opt.Skip = *lovo
-		fmt.Println(opt.AtomNames, opt.Chains, opt.Skip, opt.LessThanRMSD) /////////////////////
+		opt.AtomNames(name)
+		opt.Chains(chain)
+		opt.Begin(*begin)
+		opt.Skip(*lovo)
+		fmt.Println(opt.AtomNames(), opt.Chains(), opt.Skip(), opt.LessThanRMSD()) /////////////////////
 		fmt.Printf("# Starting LOVO calculation. You might as well go for a coffee.\n")
 		lovoret, err := align.LOVO(mol, mol.Coords[0], args[2], opt)
 		fmt.Printf("# LOVO calculation finished.\n")
@@ -205,6 +206,13 @@ func main() {
 		if *pymol {
 			fmt.Println("\n# PyMOL selection for LOVO-selected residues: ", lovoret.PyMOLSel())
 		}
+		if *gmx {
+			fmt.Println("\n# gmx make_ndx selection LOVO-selected residues:\n ")
+			for _, v := range chain {
+				fmt.Println(lovoret.GMX(v))
+			}
+		}
+
 		fmt.Println("# LOVO CA indexes in goMD selection format:")
 		for _, v := range chain {
 			fmt.Println(formatLOVO(v, lovoret.Nmols))
@@ -217,7 +225,6 @@ func main() {
 	var N int
 	//used for rmsf
 	var rmsf *rmsfstr
-
 	task := strings.ToLower(args[0])
 	switch task {
 	case "fixgmx":
@@ -285,7 +292,7 @@ func main() {
 
 func centerOfMass(coord, temp *v3.Matrix, mol *chem.Molecule, indexes []int) (*v3.Matrix, error) {
 	top := chem.NewTopology(0, 1) //there is an goChem API change comming that will affect this call
-	//	println("Fuck you aaashooole")
+	//	println("Fuck you aaashooole") //This is an Arnold reference. Sorry about the language :-)
 	top.SomeAtoms(mol, indexes)
 	temp.SomeVecs(coord, indexes)
 	mass, err := top.Masses()
