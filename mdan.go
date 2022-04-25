@@ -107,9 +107,8 @@ func main() {
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage:\n  %s: [flags] task geometry.pdb trajectory.xtc selection1 selection2 ... selectionN", os.Args[0])
 		flag.PrintDefaults()
-		fmt.Fprintf(flag.CommandLine.Output(), "\nAvailable tasks:  fixgmx, stop, distance, rmsd, peratomrmsd, ramachandran, closestn, rmsf, withincutoff, shape, planesangle, interbyres, average, super")
+		fmt.Fprintf(flag.CommandLine.Output(), "\nAvailable tasks:  fixgmx, stop, distance, rmsd, peratomrmsd, ramachandran, closestn, rmsf, withincutoff, rdf, shape, planesangle, interbyres, average, super")
 	}
-
 	flag.Parse()
 	args := flag.Args()
 	//We do this first, as, if this task is given, we don't need any other parameter.
@@ -239,16 +238,18 @@ func main() {
 		f = Angle(mol, args[3:])
 	case "rmsd":
 		f = RMSD(mol, args[3:])
+	case "rmsf":
+		f, rmsf = RMSF(mol, args[3:])
 	case "peratomrmsd":
 		f = PerAtomRMSD(mol, args[3:])
 	case "ramachandran":
 		f = Ramachandran(mol, args[3:])
 	case "closestn":
 		f = ClosestN(mol, args[3:])
-	case "rmsf":
-		f, rmsf = RMSF(mol, args[3:])
 	case "withincutoff":
 		f = WithinCutoff(mol, args[3:])
+	case "rdf":
+		f = RDF(mol, args[3:])
 	case "shape":
 		f = Shape(mol, args[3:])
 	case "planesangle":

@@ -73,6 +73,15 @@ goMD can perform several tasks, and it is build so the implementation of new tas
 
 	Where R is a positive float. The rest of the syntax is equivalent to that for ClosestN.
 
+
+* RDF: Similar to the previous but returns the RDF or MDDF fro  residues of the type residuename1 or residuename2, with respecto to the selection.
+
+```
+	./gomd [-skip=X -begin=Y] RDF  pdbname xtcname "selection" "residuename1 residuename2 residuenameM" 
+```
+
+	Where R is a positive float. The rest of the syntax is equivalent to that for ClosestN.
+
 * Distance: Plots the distance between pairs of selections for each frame of the trajectory. 
 
 ```
