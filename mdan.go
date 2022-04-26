@@ -96,7 +96,7 @@ func formatLOVO(chain string, data []*align.MolIDandChain) string {
 ////use:  program [-skip=number -begin=number2] Task pdbname xtcname skip sel1 sel2 .... selN. Some tasks may require that N is odd that n is even.
 func main() {
 	pymol := flag.Bool("pymol", false, "Only for LOVO fit. Prints a command to create a pymol selection with the residues selected by the LOVO procedure.")
-	nogmx := flag.Bool("gmx", false, "Only for LOVO fit. Do not print a command to create a Gromacs gmx make_ndx selection with the residues selected by the LOVO procedure. (this is printed by default)")
+	nogmx := flag.Bool("nogmx", false, "Only for LOVO fit. Do not print a command to create a Gromacs gmx make_ndx selection with the residues selected by the LOVO procedure. (this is printed by default)")
 
 	skip := flag.Int("skip", 0, "How many frames to skip between reads.")
 	enforcemass := flag.Bool("enforcemass", false, "For tasks requiring atomic masses, exit the program if some masses are not available. Otherwise all masses are set to 1.0 if one or more values are not found.")
@@ -118,10 +118,23 @@ func main() {
 	}
 
 	var f func(*v3.Matrix) []float64
-	mol, err := chem.PDBFileRead(args[1], false)
+	tmpf := strings.Split(args[1], ".")
+	molformat := tmpf[len(tmpf)-1]
+	var mol *chem.Molecule
+	err := fmt.Errorf("GoMD: Unrecognized format for molecule: %s", molformat)
+	switch strings.ToLower(molformat) {
+	case "pdb":
+		mol, err = chem.PDBFileRead(args[1], false)
+	case "gro":
+		mol, err = chem.GroFileRead(args[1])
+	case "xyz":
+		mol, err = chem.XYZFileRead(args[1])
+
+	}
 	if err != nil {
 		panic(err.Error())
 	}
+
 	//If we don't find one or more masses, we just set them all to 1.0
 	//unless you told us not to. In the latter case, whatever task that
 	//required massess wil crash.
@@ -141,7 +154,7 @@ func main() {
 		}
 	}
 	var traj chem.Traj
-	tmpf := strings.Split(args[2], ".")
+	tmpf = strings.Split(args[2], ".")
 	format := tmpf[len(tmpf)-1]
 	switch strings.ToLower(format) {
 	case "xtc":
@@ -169,7 +182,7 @@ func main() {
 		if err != nil {
 			panic(err.Error())
 		}
-	case "stz":
+	case "sts":
 		traj, _, err = stf.New(args[2])
 		if err != nil {
 			panic(err.Error())
