@@ -32,11 +32,10 @@ To compile and install the program (compiling with XTC-trajectories support requ
 ## Use
 
 ```
-program [-skip=X -begin=Y] Task pdbname trajname task_specific_arguments
+program [-skip=X -begin=Y] Task molfilename trajname task_specific_arguments
 ```
 
-The format is determined from the extension of the file	"trajname".
-
+The format of both the moleculefile (PDB, GRO and XYZ are supported) as well as that of the trajectory (DCD, multiPDB, multiXYZ,old-AMBER,STS and XTC are supported, XTC requires the Xdrlibrary), are determined by the respective file's extension. 
 
 ### Tasks
 
@@ -74,13 +73,11 @@ goMD can perform several tasks, and it is build so the implementation of new tas
 	Where R is a positive float. The rest of the syntax is equivalent to that for ClosestN.
 
 
-* RDF: Similar to the previous but returns the RDF or MDDF fro  residues of the type residuename1 or residuename2, with respecto to the selection.
+* RDF: Similar to the previous but returns the RDF or MDDF for residues of the type residuename1 or residuename2, with respecto to the selection.
 
 ```
 	./gomd [-skip=X -begin=Y] RDF  pdbname xtcname "selection" "residuename1 residuename2 residuenameM" 
 ```
-
-	Where R is a positive float. The rest of the syntax is equivalent to that for ClosestN.
 
 * Distance: Plots the distance between pairs of selections for each frame of the trajectory. 
 
@@ -117,17 +114,32 @@ Where N is an even number.
 	./gomd fixgmx pdbname
 ```
 
+* Super Superimposes the whole trajectory to the reference structure considering the atoms in selection to calculate the superposition. In order to employ the LOVO procedure, instead of defining a selection, use the *-lovo* option (see below).
+
+```
+	./gomd super pdbname xtcname "selection"
+```
+
+
+
 * Average: Prints the average structure over the trajectory
 ```
 	./gomd [-skip=X -begin=Y ] average pdbname xtcname 
 ```
 
-* InterByRes: Takes 2 selections and, for each frame, it returns the ID for the residue in each selection that are part of the interface between both selections in that frame. The residue IDs are returned as floats, but they are, of course, integer numbers. If both selections belong to different chains, the residues for the second selections will be given as negative numbers, to avoid mixing up residues from different chains but the same residue ID.
+* InterByRes: Takes 2 selections and, for each frame, returns the ID for the residues in each selection that are part of the interface between both selections in that frame. The residue IDs are returned as floats, but they are, of course, integer numbers. If both selections belong to different chains, the residues for the second selections will be given as negative numbers, to avoid mixing up residues from different chains but the same residue ID.
 
 ```
 	./gomd [-skip=X -begin=Y ] interByRes pdbname xtcname "selection1" "selection2"
 ```
 
+* LOVO superposition calculation: While not strictly a task, goMD can employ LOVO ( 10.1371/journal.pone.0119264\n, 10.1186/1471-2105-8-306) to find the optimal atoms from a selection to superimpose. LOVO is invoked with the option 
+
+```
+./gomd -lovo N task pdbname xtcname "selection"
+```
+
+Where N is a number larger than 0, and will become the number of frames skipped during the LOVO procedure. The task will be performed afterwards. Reasonable task options are "stop" (does nothing after printing the LOVO results) and "super" (which will superimpose the whole trajectory based on the index determined in the LOVO procedure).
 	
 ### Selections: 
 

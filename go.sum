@@ -3,6 +3,8 @@ github.com/fogleman/gg v1.2.1-0.20190220221249-0403632d5b90/go.mod h1:R/bRT+9gY/
 github.com/fogleman/gg v1.3.0/go.mod h1:R/bRT+9gY/C5z7JzPU0zXsXHKM4/ayA+zqcVNZzPa1k=
 github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0/go.mod h1:E/TSTwGwJL78qG/PmXZO1EjYhfJinVAhrmmHX6Z8B9k=
 github.com/jung-kurt/gofpdf v1.0.3-0.20190309125859-24315acbbda5/go.mod h1:7Id9E/uU8ce6rXgefFLlgrJj/GYY22cpxn+r32jIOes=
+github.com/klauspost/compress v1.15.1 h1:y9FcTHGyrebwfP0ZZqFiaxTaiDnUrGkJkI+f583BL1A=
+github.com/klauspost/compress v1.15.1/go.mod h1:/3/Vjq9QcHkK5uEr5lBEmyoZ1iFhe47etQ6QUkpK6sk=
 github.com/rmera/gochem v0.6.3 h1:Kh+1veo/ktfjSttnzcYLOWnZL+8izRKsjQ6TrWU+jUk=
 github.com/rmera/gochem v0.6.3/go.mod h1:lLCev/FHDNsd1EK7W/1DoKW4OPTv4bD1FkarLBz06GU=
 github.com/rmera/scu v0.0.0-20141011003137-5f665ea20cce h1:CduwT0Cxt/DKDSbb4/NtgU9H0aQS25ekk5zu4yEk5Wc=
