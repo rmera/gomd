@@ -21,9 +21,11 @@ for i in fin:
     if read>0:
         mat[0]=mat[1]
     mat[1]=i.split()
-    read=1
+    read+=1
+    if read%2==0:
+        mat[1]=mat[1][1:] #the columns for the Y axis begin with the frame number, which we remove here.
     for j,v in enumerate(fins):
-        mat[2+j]=v.readline().split()
+        mat[2+j]=v.readline().split()[1:]
 
 
 
