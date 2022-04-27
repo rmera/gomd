@@ -4,16 +4,15 @@ To the long life of the Ven. Khenpo Phuntzok Tenzin Rinpoche.
 
 
 This program makes extensive use of the goChem Computational Chemistry library.
-If you use this program, we kindly ask you support it by to citing the library as:
+If you use this program, we kindly ask you to support it by to citing the library as:
 
 R. Mera-Adasme, G. Savasci and J. Pesonen, "goChem, a library for computational chemistry", http://www.gochem.org.
 
 The gonum library (http://www.gonum.org/) is also much used (and appreciated).
 
 
-
 goMD is a program that can calculate  different parameters for each frame of a trajectory, printing the results to the standard output, to be plot against the frame number.
-Plotting scripts are also inlcuded.
+Plotting scripts are also included.
 
 ## Binary install
 
@@ -39,7 +38,7 @@ The format of both the moleculefile (PDB, GRO and XYZ are supported) as well as 
 
 ### Tasks
 
-goMD can perform several tasks, and it is build so the implementation of new tasks is rather simple. The task name is *not* cap-sensitive. The current tasks and their flags are:
+goMD can perform several tasks, and it was designed so that the implementation of new tasks is rather simple. The task name is *not* case-sensitive. The current tasks and their flags are:
 
 
 * Ramachandran:
@@ -47,7 +46,7 @@ goMD can perform several tasks, and it is build so the implementation of new tas
 	./gomd  [-skip=X -begin=Y ] Ramachandran pdbname xtcname "residuename1 chain1" "residuename2 chain2" ... "residuenameN chainN" [RGB total_frames]
 ```
 
-	Will plot the phi and psi angles for each residue/chain pair given on each frame on the trajectory. If the RGB keyword and the number of total frames that will be read from the trajectory are given, in addition to the phi/psi pair, three more columns will be printed for each residue/chain pair: The RGB numbers for a color (0 to 255) which will progress from red to purple (the standard hue circle) with increasing frames. This is useful to plot each phi/psi with its own color and follow the proggression of them with the trajectory. A little tool for plotting these results on Gnuplot is included which supports up to four different residues. 
+	Will plot the phi and psi angles for each residue/chain pair given on each frame on the trajectory. If the RGB keyword and the number of total frames that will be read from the trajectory are given, in addition to the phi/psi pair, three more columns will be printed for each residue/chain pair: The RGB numbers for a color (0 to 255) which will progress from red to purple (the standard hue circle) with increasing frames. This is useful to plot each phi/psi with its own color and follow the proggression of them with the trajectory. A little Python tool for plotting these reults is included.
 
 * RMSD: Plots the RMSD of the given selections against the coordinates in the reference PDB file for those selections.
 
@@ -151,11 +150,16 @@ ATNAME is a PDB atom name such as CA (alpha carbon). Hydrogen names may vary wit
 
 ### Plotting the results
 
-Two Python scripts are included to help with the result visualization.
+A few Python scripts are included to help with the result visualization.
 
 * ramachandran.py is a simple script that will plot one set of Ramachandran angles (the ones in the columns 2 and 3 of the output file from gomd) along the trajectory, coloring the value for each frame in a different hue, so any conformationa change can be observed.
 
-* plots.py is a rather complete plotting tool for all the other tasks. It is rather easy to use (for the simplest case of only 1 column of results, or 2 columns in total, it only requires the name of the file) but has a fair bit of options to customize the visualization.  It can plot only the selected columns, set the scale for the y-axis, plot an histogram for the results instead of the default results vs time plot, and more. Otherplots.py will ignore lines starting with "\#", "@" and "&", which allows it to plot Gromacs-produced xvg files.
+* interfaces.py plots the results of the InterByRes, as the fraction of the trajectory for which each residue in the selection is part of the interface.
+
+* plots.py is a rather complete plotting tool for all the other plotting tasks. It is easy to use (for the simplest case of only 1 column of results, or 2 columns in total, it only requires the name of the file) but has a fair bit of options to customize the visualization.  It can plot only the selected columns, set the scale for the y-axis, plot an histogram for the results instead of the default results vs time plot, and more. Plots.py will ignore lines starting with "\#", "@" and "&", which allows it to plot Gromacs-produced xvg files.
+
+* rdf2gomd.py is a small program to put the results of the rdf task in a regular by-column goMD format, which can then be plotted with plots.py. It supports putting the results of several rdf runs as columns in the same file.
+
 
 
 goMD, a little program for the analysis of molecular dynamics simulations.
