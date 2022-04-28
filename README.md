@@ -148,17 +148,27 @@ CHAIN must be a chain identifier such as "A". If chain is "ALL", every chain wil
 ATNAME is a PDB atom name such as CA (alpha carbon). Hydrogen names may vary with the forcefield employed. if ALL is given, as the first atom name, all atoms in the selected residues will be consiered.
 
 
-### Plotting the results
+## Plotting the results
 
 A few Python scripts are included to help with the result visualization.
 
-* ramachandran.py is a simple script that will plot one set of Ramachandran angles (the ones in the columns 2 and 3 of the output file from gomd) along the trajectory, coloring the value for each frame in a different hue, so any conformationa change can be observed.
+* ramachandran.py is a simple script that will plot one set of Ramachandran angles (the ones in the columns 2 and 3 of the output file from gomd) along the trajectory, coloring the value for each frame in a different hue, so any conformationa change can be observed. Takes only the goMD Ramachandran output file as input.
 
-* interfaces.py plots the results of the InterByRes, as the fraction of the trajectory for which each residue in the selection is part of the interface.
+* interfaces.py plots the results of the InterByRes, as the fraction of the trajectory for which each residue in the selection is part of the interface. Use
 
-* plots.py is a rather complete plotting tool for all the other plotting tasks. It is easy to use (for the simplest case of only 1 column of results, or 2 columns in total, it only requires the name of the file) but has a fair bit of options to customize the visualization.  It can plot only the selected columns, set the scale for the y-axis, plot an histogram for the results instead of the default results vs time plot, and more. Plots.py will ignore lines starting with "\#", "@" and "&", which allows it to plot Gromacs-produced xvg files.
+```
+interfaces.py -h
+```
+for details.
 
-* rdf2gomd.py is a small program to put the results of the rdf task in a regular by-column goMD format, which can then be plotted with plots.py. It supports putting the results of several rdf runs as columns in the same file.
+
+* plots.py is a rather complete plotting tool for all the other plotting tasks. It is easy to use (for the simplest case of only 1 column of results, or 2 columns in total, it only requires the name of the file) but has a fair bit of options to customize the visualization.  It can plot only the selected columns, set the scale for the y-axis, plot an histogram for the results instead of the default results vs time plot, and more. Plots.py will ignore lines starting with "\#", "@" and "&", which allows it to plot Gromacs-produced xvg files. Use 
+```
+plots.py -h
+```
+for details.
+
+* rdf2gomd.py is a small program to put the results of the rdf task in a regular by-column goMD format, which can then be plotted with plots.py. It supports putting the results of several rdf runs as columns in the same file. It takes only the file(s) as arguments.
 
 
 

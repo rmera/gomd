@@ -13,7 +13,7 @@ p = argparse.ArgumentParser()
 
 p.add_argument("fname", type=str, help="Input file, gomd format")
 p.add_argument("totalres", type=int, help="Total number of residues in the protein")
-p.add_argument("--co", type=int, help="Chain offset, the number of residues in the first chain, if applicable", default="0")
+p.add_argument("--co", type=int, help="Chain offset, the number of residues in the first chain, if the structure is a dimer and the residue numbers start from 1 in each chain. Note that trimers and above are not supported unless the residue numers are not restarted on each chain.", default="0")
 p.add_argument("--forceyrange", type=str,help="Give two numbers separated by a space. Forces the boundary of the y axis to be twose two numbers",default="")
 a = p.parse_args()
 
