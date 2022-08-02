@@ -188,6 +188,12 @@ func main() {
 			panic(err.Error())
 		}
 
+	case "stz":
+		traj, _, err = stf.New(args[2])
+		if err != nil {
+			panic(err.Error())
+		}
+
 	}
 	var super bool = false
 
