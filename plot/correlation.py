@@ -27,7 +27,7 @@ def plot_maps(prob_map,name, mini=None,maxi=None):
 
     fig.tight_layout()
     plt.savefig(name, dpi=600)
-   # plt.show()
+    plt.show()
 
 
 def parsesel(sele):
@@ -87,7 +87,7 @@ p.add_argument("--checksymmetry",type=bool, help="Checks and prints warnings if 
 
 p.add_argument("--min",type=float, help="Minimum in the data range, for plotting",default=None)
 p.add_argument("--max",type=float, help="Maximum in the data range, for plotting",default=None)
-p.add_argument("--pvalfilter",type=float, help="values lareger than this will be set to 1",default=0.01)
+p.add_argument("--pvalfilter",type=float, help="points with p-values lareger than this will be set to 1",default=0.01)
 
 
 
@@ -100,7 +100,7 @@ a = p.parse_args()
 
 vals=[]
 resmatrix=[]
-
+rvalmatrix=[]
 pvalmatrix=[]
 
 if a.f!="":
@@ -108,9 +108,11 @@ if a.f!="":
         vals.append([])
         resmatrix.append([])
         pvalmatrix.append([])
+        rvalmatrix.append([])
         for j in range(a.c):
             resmatrix[-1].append(-1000) #just any obviously wrong number
             pvalmatrix[-1].append(-1000) #just any obviously wrong number
+            rvalmatrix[-1].append(-1000) #just any obviously wrong number
     fin=open(a.f,"r")
     for i in fin:
         l=i.split()
@@ -167,14 +169,13 @@ if a.f!="":
                 else:
                     reg = linregress(w,v)
                 if np.abs(reg.slope)>1.0 and not a.nomax1:
-                    print("shashu") ##############################
                     reg = linregress(w,v)
                 pvalmatrix[i][j]=reg.pvalue
+                rvalmatrix[i][j]=reg.rvalue
                 resmatrix[i][j]=reg.slope
     else:
         for i,v in enumerate(vals):
             for j,w in enumerate(vals):
-
                 y=w[a.delay:] #x is the delayed one, so I starts from a larger index to compensate
                 x=disp[i]     #say, at the first position with delay 5 we will be comparing x[0] and y[4]
                 stdx=np.std(x)
@@ -187,6 +188,7 @@ if a.f!="":
                     print("shashu") ##############################
                     reg = linregress(w,v)
                 pvalmatrix[i][j]=reg.pvalue
+                rvalmatrix[i][j]=reg.rvalue
                 resmatrix[i][j]=reg.slope
                 jsonending="_del%0db%0d.json"%(a.delay,a.delayblur)
 
@@ -200,6 +202,11 @@ if a.f!="":
     jout=open(jnpval,"w")
     json.dump(pvalmatrix,jout)
     jout.close()
+    jnrval=jn.replace(".json","_rval.json")
+    jout=open(jnrval,"w")
+    json.dump(rvalmatrix,jout)
+    jout.close()
+
 
 
 elif a.j!="":
@@ -210,6 +217,11 @@ elif a.j!="":
     fin=open(pj,"r")
     pvalmatrix=np.array(json.load(fin))
     fin.close()
+    rj=a.j.replace(".json","_rval.json")
+    fin=open(rj,"r")
+    rvalmatrix=np.array(json.load(fin))
+    fin.close()
+
 
 
 for i,v in enumerate(resmatrix):
@@ -218,6 +230,7 @@ for i,v in enumerate(resmatrix):
             resmatrix[i][j]=0.0
         if len(pvalmatrix)>0 and pvalmatrix[i][j]>=a.pvalfilter:
             resmatrix[i][j]=0.0
+            rvalmatrix[i][j]=0.0
 
 
 
@@ -249,9 +262,6 @@ if a.noplot:
 
 
 
-
-
-
 #The plot
 ending=".png"
 if a.delay>0:
@@ -265,10 +275,14 @@ if a.filter>0:
     base=base+"_fil"
 name=base.split(".")[0]+ending
 pname=name.replace(".png","_pval.png")
+rname=name.replace(".png","_rval.png")
 
 if a.extraplot:
     if len(pvalmatrix)>0:
         plot_maps(pvalmatrix,pname,mini=0,maxi=a.pvalfilter)
+    if len(rvalmatrix)>0:
+        plot_maps(rvalmatrix,rname,mini=0,maxi=1) #I could set a max for this
+
 
 plot_maps(resmatrix,name,mini=a.min,maxi=a.max)
 
