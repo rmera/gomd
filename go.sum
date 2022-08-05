@@ -7,8 +7,8 @@ github.com/klauspost/compress v1.15.1 h1:y9FcTHGyrebwfP0ZZqFiaxTaiDnUrGkJkI+f583
 github.com/klauspost/compress v1.15.1/go.mod h1:/3/Vjq9QcHkK5uEr5lBEmyoZ1iFhe47etQ6QUkpK6sk=
 github.com/rmera/gochem v0.6.3 h1:Kh+1veo/ktfjSttnzcYLOWnZL+8izRKsjQ6TrWU+jUk=
 github.com/rmera/gochem v0.6.3/go.mod h1:lLCev/FHDNsd1EK7W/1DoKW4OPTv4bD1FkarLBz06GU=
-github.com/rmera/scu v0.0.0-20141011003137-5f665ea20cce h1:CduwT0Cxt/DKDSbb4/NtgU9H0aQS25ekk5zu4yEk5Wc=
-github.com/rmera/scu v0.0.0-20141011003137-5f665ea20cce/go.mod h1:4ev5bGOsKrx6BIcHCkPoZG5adRrbMAJKanrJRCQMhEc=
+github.com/rmera/scu v0.1.0 h1:NkGZYBtL2ZOPCaL4naCFJ3JY4w+Y3Wh5XDhal8vlYWI=
+github.com/rmera/scu v0.1.0/go.mod h1:bud3+C6l94vgt3UEQwOd5Oo7tlcEwEojMw2G8C9jyJs=
 github.com/skelterjohn/go.matrix v0.0.0-20130517144113-daa59528eefd h1:+ZLYzP9SYC3WU9buyb9H0l9DQxqVFOCkDG8QnNBMAlA=
 github.com/skelterjohn/go.matrix v0.0.0-20130517144113-daa59528eefd/go.mod h1:x7ui0Rh4QxcWEOgIfa3cr9q4W/wyLTDdzISxBmLVeX8=
 golang.org/x/exp v0.0.0-20180321215751-8460e604b9de/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=

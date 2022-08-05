@@ -165,7 +165,7 @@ func distRank(coord *v3.Matrix, mol *chem.Molecule, refindexes []int, residues [
 	tmp := v3.Zeros(1)
 	for i := 0; i < mol.Len(); i++ {
 		at := mol.Atom(i)
-		molname = at.Molname
+		molname = at.MolName
 		id = at.MolID
 		chain = at.Chain
 		var test *v3.Matrix

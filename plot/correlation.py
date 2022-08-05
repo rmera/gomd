@@ -85,8 +85,8 @@ p.add_argument("--checksymmetry",type=bool, help="Checks and prints warnings if 
 
 
 
-p.add_argument("--min",type=float, help="Minimum in the data range, for plotting",default=None)
-p.add_argument("--max",type=float, help="Maximum in the data range, for plotting",default=None)
+p.add_argument("--min",type=float, help="Minimum in the data range, for plotting",default=1)
+p.add_argument("--max",type=float, help="Maximum in the data range, for plotting",default=-1)
 p.add_argument("--pvalfilter",type=float, help="points with p-values lareger than this will be set to 1",default=0.01)
 
 
@@ -212,14 +212,6 @@ if a.f!="":
 elif a.j!="":
     fin=open(a.j,"r")
     resmatrix=np.array(json.load(fin))
-    fin.close()
-    pj=a.j.replace(".json","_pval.json")
-    fin=open(pj,"r")
-    pvalmatrix=np.array(json.load(fin))
-    fin.close()
-    rj=a.j.replace(".json","_rval.json")
-    fin=open(rj,"r")
-    rvalmatrix=np.array(json.load(fin))
     fin.close()
 
 
