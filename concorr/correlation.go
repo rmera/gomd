@@ -48,8 +48,8 @@ func makewindow(vals [][]float64, delay, blur int) [][]float64 {
 	for _, v := range vals {
 		ret = append(ret, make([]float64, 0, len(vals)))
 		for j, _ := range v {
-			if j >= delay {
-				tmp := v[j-delay : j-delay+blur+1]
+			if j >= delay+(blur/2) {
+				tmp := v[j-delay-(blur/2) : j-delay+(blur/2)+1] //we get a window centered on delay, and with a width blur (or blur-1, if blur is an odd number).
 				ret[len(ret)-1] = append(ret[len(ret)-1], stat.Mean(tmp, nil))
 			}
 		}
@@ -70,7 +70,7 @@ func main() {
 	c := flag.Int("c", 306, "Columns in the gomd files, not counting the time (i.e first) column")
 	//	filter := flag.Float64("filter", 0.0, "filter (set to zero) any value with absolute value smaller than the given")
 	delay := flag.Int("delay", 0, "if >0, obtain a delayed-correlation index with a delay of the given number of frames")
-	delayblur := flag.Int("delayblur", 0, "if --delay is used, for the 'delayed' data, use not the i-delay element, but the average between i-delay and i-delay+delayblur")
+	delayblur := flag.Int("delayblur", 0, "if --delay is used, for the 'delayed' data, use not the i-delay element, but the average of the elements between i-delay-(delayblur/2) and i-delay+(delayblur/2), rounding down if delayblur is even.")
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage:\n  %s [flags] rsd.dat", os.Args[0])
 		flag.PrintDefaults()
@@ -119,10 +119,14 @@ func main() {
 	}
 	gorutines := 0
 	for i, _ := range vals {
-		go slicesslope(!*nomax1, *half, i, *delay, vals, disp, slopes, stds, response, chans[gorutines])
+		go slicesslope(!*nomax1, *half, i, *delay, *delayblur, vals, disp, slopes, stds, response, chans[gorutines])
 		gorutines++
-		//The idea is that we pause the iteration when we have sent *cpu gorutines, and wait for them to return
-		//The order doesn't quite matter, as they are all supposed to take give or take the same time.
+		//The idea is that we pause the iteration when we have sent as many
+		//gorutines as the CPUs we have, and wait for them to return
+		//This ensures we never have more gorutines running (and using memory)
+		//than the actual CPUs available. Those would give us no additional speedup
+		//And the memory consumption can become pretty high if you just throw 300+ jobs.
+		//The order doesn't matter, as they are should be all take aprox the same time.
 		if gorutines == *cpus {
 			for _, v := range chans {
 				<-v
@@ -130,6 +134,8 @@ func main() {
 			gorutines = 0
 		}
 	}
+	//When the for loop is over, if residues to analize is not a multiple of the number of CPUS, we will have
+	//gorutines running that will have not "drained". So we need to drain them now.
 	//wait for any remaining gorutine to finish
 	//Since the gorutines count is increased _after_ launching a gorutine, the index of the last channel passed to a gorutine will be gorutine-1
 	for i := gorutines - 1; i >= 0; i-- {
@@ -162,7 +168,7 @@ func main() {
 
 //It is commonly safer to make anything that runs in a separate gorutine a proper, separate function (as opposed to a closure)
 //That way you know that in only has access to the values you pass to it.
-func slicesslope(max1, half bool, i, delay int, vals, disp, slopes [][]float64, stds []float64, response func(x, y, w []float64, a bool) (float64, float64), returnsignal chan bool) {
+func slicesslope(max1, half bool, i, delay, blur int, vals, disp, slopes [][]float64, stds []float64, response func(x, y, w []float64, a bool) (float64, float64), returnsignal chan bool) {
 	var x, y []float64
 	var beta float64
 	for j, _ := range vals {
@@ -172,7 +178,7 @@ func slicesslope(max1, half bool, i, delay int, vals, disp, slopes [][]float64, 
 		x = vals[i]
 		y = vals[j]
 		if delay > 0 {
-			y = vals[j][delay:] //x is the delayed one, so I starts from a larger index to compensate
+			y = vals[j][delay+(blur/2):] //x is the delayed one, so I starts from a larger index to compensate
 			x = disp[i]
 		}
 		// say, at the first position with delay 5 we will be comparing x[0] and y[4]
