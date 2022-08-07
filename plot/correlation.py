@@ -3,12 +3,13 @@
 from __future__ import print_function
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as plticker
 import sys
 import argparse
 from scipy.stats import linregress
 import json
 
-def plot_maps(prob_map,name, mini=None,maxi=None):
+def plot_maps(prob_map,name, mini=None,maxi=None,tickfreq=0):
     fig, ax = plt.subplots(1, 1, figsize=(20,20))
     #We ensure that the range is symmetrical around 0
     if mini==None and maxi==None:
@@ -24,7 +25,10 @@ def plot_maps(prob_map,name, mini=None,maxi=None):
     cbar.ax.set_ylabel("Color Bar", rotation=-90, va="bottom")
 
     ax.set_title("Per-atom RMSD correlation")
-
+    if tickfreq>0:
+        loc = plticker.MultipleLocator(base=tickfreq) # From stackoverflow 
+        ax.xaxis.set_major_locator(loc)
+        ax.yaxis.set_major_locator(loc)
     fig.tight_layout()
     plt.savefig(name, dpi=600)
     plt.show()
@@ -73,11 +77,11 @@ p.add_argument("--filter",type=float, help="filter (set to zero) any value with 
 p.add_argument("--det1", type=str, help="Print the correlations involving the given residues, and those given in --det2, which must be given separated by spaces, surounded by quotes o double quotes",default="")
 p.add_argument("--det2", type=str, help="Print the correlations involving the given residues, and those given in --det2, which must be given separated by spaces, surounded by quotes o double quotes",default="")
 
-p.add_argument("--filterd",type=float, help="If the --details flag is set, only print values with absolute value larger than this",default=0.1)
-
+p.add_argument("--filterd",type=float, help="Only print values with absolute value larger than this",default=0.1)
 p.add_argument("--delay",type=int, help="if >0, obtain a delayed-correlation index with a delay of the given number of frames",default=0)
 p.add_argument("--delayblur",type=int, help="if --delay is used, for the 'delayed' data, use not the i-delay element, but the average between i-delay and i-delay+delayblur",default=0)
 
+p.add_argument("--tickfreq",type=int, help="if >0, sets the tick frequency in the plot to its value",default=0)
 
 p.add_argument("--noplot",type=bool, help="Don't plot the data",default=False)
 p.add_argument("--extraplot",type=bool, help="Plot p-values and standard errors, if available",default=False)
@@ -220,6 +224,8 @@ for i,v in enumerate(resmatrix):
     for j,w in enumerate(v):
         if np.abs(w)<a.filter:
             resmatrix[i][j]=0.0
+        elif a.filter>0.0:
+            resmatrix[i][j]*=3 #3 is just a magic numbrer to amplify the data which was not filtered out. It coudl be made an option.
         if len(pvalmatrix)>0 and pvalmatrix[i][j]>=a.pvalfilter:
             resmatrix[i][j]=0.0
             rvalmatrix[i][j]=0.0
@@ -269,14 +275,17 @@ name=base.split(".")[0]+ending
 pname=name.replace(".png","_pval.png")
 rname=name.replace(".png","_rval.png")
 
+
+
+
 if a.extraplot:
     if len(pvalmatrix)>0:
-        plot_maps(pvalmatrix,pname,mini=0,maxi=a.pvalfilter)
+        plot_maps(pvalmatrix,pname,mini=0,maxi=a.pvalfilter,tickfreq=a.tickfreq)
     if len(rvalmatrix)>0:
-        plot_maps(rvalmatrix,rname,mini=0,maxi=1) #I could set a max for this
+        plot_maps(rvalmatrix,rname,mini=0,maxi=1,tickfreq=a.tickfreq) #I could set a max for this
 
 
-plot_maps(resmatrix,name,mini=a.min,maxi=a.max)
+plot_maps(resmatrix,name,mini=a.min,maxi=a.max,tickfreq=a.tickfreq)
 
 
         
