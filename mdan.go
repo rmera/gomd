@@ -101,6 +101,8 @@ func main() {
 	skip := flag.Int("skip", 0, "How many frames to skip between reads.")
 	enforcemass := flag.Bool("enforcemass", false, "For tasks requiring atomic masses, exit the program if some masses are not available. Otherwise all masses are set to 1.0 if one or more values are not found.")
 	begin := flag.Int("begin", 1, "The frame from where to start reading.")
+
+	end := flag.Int("end", -1, "The last frame to be read. If <=0, the last frame in the trajectory")
 	lovo := flag.Int("lovo", -1, "if >=0, uses LOVO to determine the residues used in a superposition. The number becomes the frames skipped during the LOVO calculation. See (and cite) 10.1371/journal.pone.0119264. This flag invalidates the 'tosuper' flag")
 	lovolimit := flag.Float64("lovolimit", 1.0, "Only residues with a final RMSD less that this value (form a LOVO calculation), in A, will be considered for alignment. Only meaningful if the flag 'lovo' is set to >=0")
 	tosuper := flag.String("tosuper", "", "The atoms to be used of the superposition, if that is to be performed. Given as a regular goMD selection.")
@@ -288,7 +290,7 @@ func main() {
 		fmt.Println("Task parameter invalid or not present" + args[0])
 		os.Exit(1)
 	}
-	mdan(traj, mol.Coords[0], f, *skip, *begin, super, superlist)
+	mdan(traj, mol.Coords[0], f, *skip, *begin, *end, super, superlist)
 
 	//Extra post processing needed by some tasks
 
@@ -609,10 +611,13 @@ func Distance(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 //slice as second to N fields, with the fields separated by spaces.
 //the passed function should be a closure with everything necessary to obtain the desired data from each frame
 //of the trajectory.
-func mdan(traj chem.Traj, ref *v3.Matrix, f func(*v3.Matrix) []float64, skip, begin int, super bool, superlist []int) {
+func mdan(traj chem.Traj, ref *v3.Matrix, f func(*v3.Matrix) []float64, skip, begin, end int, super bool, superlist []int) {
 	var coords *v3.Matrix
 	lastread := -1
 	for i := 0; ; i++ { //infinite loop, we only break out of it by using "break"  //modified for profiling
+		if i > *end {
+			break
+		}
 		if lastread < 0 || (i >= lastread+skip && i >= begin-1) {
 			coords = v3.Zeros(traj.Len())
 		}
