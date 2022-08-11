@@ -184,13 +184,7 @@ func main() {
 		if err != nil {
 			panic(err.Error())
 		}
-	case "sts":
-		traj, _, err = stf.New(args[2])
-		if err != nil {
-			panic(err.Error())
-		}
-
-	case "stz":
+	case "stf":
 		traj, _, err = stf.New(args[2])
 		if err != nil {
 			panic(err.Error())
@@ -615,7 +609,7 @@ func mdan(traj chem.Traj, ref *v3.Matrix, f func(*v3.Matrix) []float64, skip, be
 	var coords *v3.Matrix
 	lastread := -1
 	for i := 0; ; i++ { //infinite loop, we only break out of it by using "break"  //modified for profiling
-		if i > *end {
+		if i > end && end > 0 {
 			break
 		}
 		if lastread < 0 || (i >= lastread+skip && i >= begin-1) {
@@ -625,7 +619,7 @@ func mdan(traj chem.Traj, ref *v3.Matrix, f func(*v3.Matrix) []float64, skip, be
 		if err != nil {
 			_, ok := err.(chem.LastFrameError)
 			if ok || err.Error() == "EOF" {
-				break //We processed all frames and are ready, not a real error.
+				break //We processed all frames and are ready, not a real error.a
 
 			} else {
 				panic(err.Error())

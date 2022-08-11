@@ -66,7 +66,7 @@ func Super(mol *chem.Molecule, args []string, indexes []int) (func(coord *v3.Mat
 			panic("Super: sel2atoms:" + err.Error())
 		}
 	}
-	wname := "superimposed.stz"
+	wname := "superimposed.stf"
 	if argslen >= neededargs {
 		wname = args[argslen-1]
 	}
