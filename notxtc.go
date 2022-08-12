@@ -1,7 +1,7 @@
+//go:build !xtc
 // +build !xtc
 
 /*
- * charges.go, part of Bartender
  *
  *
  * Copyright 2020 Raul Mera <rmera{at}usach(dot)cl>
@@ -35,5 +35,5 @@ import (
 )
 
 func OpenXTC(name string) (chem.Traj, error) {
-	return nil, fmt.Errorf("XTC not supported! recompile Bartender with the xtc compilation tag")
+	return nil, fmt.Errorf("XTC not supported! recompile goMD with the xtc compilation tag")
 }
