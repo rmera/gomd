@@ -179,6 +179,7 @@ func slicesslope(max1, half bool, i, delay, blur int, vals, disp, slopes [][]flo
 	var beta float64
 	for j, _ := range vals {
 		if j <= i && half {
+			println("shouldn't happen!") //////////
 			continue
 		}
 		x = vals[i]

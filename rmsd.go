@@ -146,6 +146,78 @@ func (r *rmsfstr) String() string {
 	return strings.Join(r.data, "\n")
 }
 
+func RMSF2(mol *chem.Molecule, args []string) (func(coord *v3.Matrix) []float64, *rmsfstr) {
+	//	fmt.Println("Use: MDan RMSD sel1 sel2...")
+	argslen := len(args)
+	if argslen < 1 {
+		panic("RMSF: Not enough arguments, need at least one!")
+	}
+	indexes := make([][]int, 0, argslen)
+	for _, v := range args {
+		s, err := sel2atoms(mol, v)
+		if err != nil {
+			panic("RMSF: sel2atoms:" + err.Error())
+		}
+		indexes = append(indexes, s)
+	}
+	frames := 0.0
+	cm := make([]*v3.Matrix, 0, len(indexes))
+	sqcm := make([]*v3.Matrix, 0, len(indexes))
+	temp := make([]*v3.Matrix, 0, len(indexes))
+	test := make([]*v3.Matrix, 0, len(indexes))
+	//	stdevs:=make([][]float64,0,len(indexes))
+	for _, v := range indexes {
+		tr := v3.Zeros(len(v))
+		tt := v3.Zeros(len(v))
+		temptest := v3.Zeros(len(v))
+		ttemp := v3.Zeros(len(v))
+		tr.SomeVecs(mol.Coords[0], v) //the refs are already correctly filled
+		cm = append(cm, tr)
+		sqcm = append(sqcm, tt)
+		temp = append(temp, ttemp)
+		test = append(test, temptest)
+		//stdevs=append(stdevs,make([]float64,0,len(v)))
+	}
+	rmsf := new(rmsfstr)
+	ret := func(coord *v3.Matrix) []float64 {
+		rmsf.data = make([]string, 0, len(indexes[0]))
+		frames++
+		numbers := 0
+		//	output, _ := os.Create("RMSF.dat") //A bit crazy, but since I don't know when does the traj end, I have to write a "current" RMSF for each frame ( save for the first 2). I do it in the same file, which means that for each frame, the file gets overwritten.
+		//		defer output.Close()
+		for i, v := range indexes {
+			test[i].SomeVecs(coord, v) //the refs are already correctly filled
+			cm[i].Add(cm[i], test[i])
+			temp[i].Dense.MulElem(test[i], test[i])
+			sqcm[i].Add(temp[i], sqcm[i])
+			if frames < 2 {
+				continue
+			}
+			sqcm[i].Scale(1/frames, sqcm[i])
+			cm[i].Scale(1/frames, cm[i])
+			temp[i].MulElem(cm[i], cm[i])
+			temp[i].Sub(sqcm[i], temp[i])
+
+			//Since I don't know when do the frames stop, I need to every time get my accumulators back to the regular state.
+			//Of course I could just multiply the new set of numbers to be added in each frame by 1/(frames-1), but I'll refrain from
+			//getting cute until I know this works.
+			sqcm[i].Scale(frames, sqcm[i])
+			cm[i].Scale(frames, cm[i])
+		}
+		vecs := temp[0].NVecs()
+		for j := 0; j < vecs; j++ {
+			numbers++
+			outstr := fmt.Sprintf("%7d ", numbers)
+			for i := 0; i < len(temp); i++ {
+				outstr = outstr + fmt.Sprintf("%8.3f ", math.Sqrt(temp[i].VecView(j).Norm(2)))
+			}
+			rmsf.data = append(rmsf.data, outstr)
+		}
+		return []float64{0.0} //Dummy output
+	}
+	return ret, rmsf
+}
+
 func RMSF(mol *chem.Molecule, args []string) (func(coord *v3.Matrix) []float64, *rmsfstr) {
 	//	fmt.Println("Use: MDan RMSD sel1 sel2...")
 	argslen := len(args)

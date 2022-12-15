@@ -28,15 +28,27 @@ p.add_argument("--diff", type=bool, help="Plot the difference between 2 sets of 
 p.add_argument("--tu", type=str,help="Time units" , default="ns")
 p.add_argument("--rmsf", type=bool, help="plot a rmsf run",default=False)
 p.add_argument("--highlight", type=str, help="X values to highlight, give as a list of numbers separated by spaces, all surrounded by a set of quotation marks",default="")
+
+p.add_argument("--forcexrange", type=str,help="Give two numbers separated by a space. Forces the boundary of the x axis to be twose two numbers",default="")
+
 p.add_argument("--forceyrange", type=str,help="Give two numbers separated by a space. Forces the boundary of the y axis to be twose two numbers",default="")
 a = p.parse_args()
 
 yrange=[]
+xrange=[]
 force=a.forceyrange
 if force!="":
     f=force.split()
     yrange.append(float(f[0]))
     yrange.append(float(f[1]))
+
+force=a.forcexrange
+if force!="":
+    f=force.split()
+    xrange.append(float(f[0]))
+    xrange.append(float(f[1]))
+
+
 
 #process highlight, we get the x coordinates that should be highlighted.
 highstr=a.highlight.split()
@@ -140,7 +152,10 @@ for i,val in enumerate(x):
 
             
 
-glyphs=["b-","r-","g-","m-","k-","c-","k--","b^-","ro-","g.-","c:"]        
+glyphs=["b-","r-","g-","m-","k-","c-","k--","b^-","ro-","g.-","c:"]    
+histcolors=[]
+for i,v in enumerate(glyphs):
+	histcolors.append(v[0])
 
 
 if a.c>len(glyphs):
@@ -164,6 +179,10 @@ else:
 if yrange:
     axes = plt.gca()
     axes.set_ylim(yrange)
+if xrange:
+    axes = plt.gca()
+    axes.set_xlim(xrange)
+
 
 if a.rmsf:
     plt.xlabel("Residue number")
@@ -207,9 +226,9 @@ for i,y in enumerate(ys):
     if a.histogram:
         print(len(x),len(y))
         if tagslist[i]!="":
-            plt.hist(y,bins="auto",histtype="step",label=tagslist[i],cumulative=cdf, density=True)
+            plt.hist(y,bins="auto",histtype="step",label=tagslist[i],cumulative=cdf, density=True,color=histcolors[i])
         else:
-            plt.hist(y,bins="auto",histtype="step",cumulative=cdf,density=True)
+            plt.hist(y,bins="auto",histtype="step",cumulative=cdf,density=True,color=histcolors[i])
         continue
     if  tagslist[i]!="":
         ax.plot(x2,y,glyphs[i],label=tagslist[i])

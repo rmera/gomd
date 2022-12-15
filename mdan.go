@@ -222,9 +222,7 @@ func main() {
 		}
 		if !*nogmx {
 			fmt.Println("\n# gmx make_ndx selection LOVO-selected residues:\n ")
-			for _, v := range chain {
-				fmt.Println(lovoret.GMX(v))
-			}
+			fmt.Println(lovoret.GMX())
 		}
 
 		fmt.Println("# LOVO CA indexes in goMD selection format:")
@@ -296,6 +294,7 @@ func main() {
 
 	}
 	if task == "rmsf" {
+		log.Println("Remember that, for the RMSF job, your results won't come to stdout, but will be written to a RMSF.dat file")
 		outp, err := os.Create("RMSF.dat")
 		if err != nil {
 			log.Printf("Couldn't open RMSF file for writing: %s", err.Error())
