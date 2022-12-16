@@ -43,12 +43,18 @@ func qerr(err error) {
 	}
 }
 
-func makewindow(vals [][]float64, delay, blur int) [][]float64 {
+func makewindow(vals [][]float64, delay, blur, chunklen int) [][]float64 {
 	ret := make([][]float64, 0, len(vals))
 	for _, v := range vals {
+		currentchunk := 0
 		ret = append(ret, make([]float64, 0, len(vals)))
 		for j, _ := range v {
-			if j >= delay+(blur/2) {
+			if j > 0 && chunklen > 0 && (j)%chunklen == 0 { //the element v[j] belongs to the next chunk
+				currentchunk++
+			}
+			//I _think_ the chunklen*currentchunk part ensures that we skip anything that, with the delay,
+			//would 'cross' between trajectory chunks.
+			if j >= (chunklen*currentchunk)+delay+(blur/2) {
 				tmp := v[j-delay-(blur/2) : j-delay+(blur/2)+1] //we get a window centered on delay, and with a width blur (or blur-1, if blur is an odd number).
 				ret[len(ret)-1] = append(ret[len(ret)-1], stat.Mean(tmp, nil))
 			}
@@ -70,10 +76,12 @@ func main() {
 	c := flag.Int("c", 306, "Columns in the gomd files, not counting the time (i.e first) column")
 	//	filter := flag.Float64("filter", 0.0, "filter (set to zero) any value with absolute value smaller than the given")
 	delay := flag.Int("delay", 0, "if >0, obtain a delayed-correlation index with a delay of the given number of frames")
+
+	chunklen := flag.Int("chunklen", 0, "if >0, the trajectory is composed of several independent 'chunks'. This only has an effect when using delay, as dep will ensure that delayed comparisons never cross the border between chunks, where any dependence/correlation would be artifactual ")
 	foutname := flag.String("out", "", "If not an empty string, overwrites the default name for the output file")
 	delayblur := flag.Int("delayblur", 0, "if --delay is used, for the 'delayed' data, use not the i-delay element, but the average of the elements between i-delay-(delayblur/2) and i-delay+(delayblur/2), rounding down if delayblur is even.")
 	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage:\n  %s [flags] rsd.dat", os.Args[0])
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage:\n  %s [flagsy] rsd.dat", os.Args[0])
 		flag.PrintDefaults()
 	}
 	flag.Parse()
@@ -104,7 +112,7 @@ func main() {
 	stds := Stds(vals)
 	var disp [][]float64
 	if *delay > 0 {
-		disp = makewindow(vals, *delay, *delayblur)
+		disp = makewindow(vals, *delay, *delayblur, *chunklen)
 	}
 	var response func(x, y, w []float64, a bool) (float64, float64)
 	correlation := func(x, y, w []float64, or bool) (float64, float64) {
@@ -120,7 +128,7 @@ func main() {
 	}
 	gorutines := 0
 	for i, _ := range vals {
-		go slicesslope(!*nomax1, *half, i, *delay, *delayblur, vals, disp, slopes, stds, response, chans[gorutines])
+		go slicesslope(!*nomax1, *half, i, *delay, *delayblur, *chunklen, vals, disp, slopes, stds, response, chans[gorutines])
 		gorutines++
 		//The idea is that we pause the iteration when we have sent as many
 		//gorutines as the CPUs we have, and wait for them to return
@@ -174,7 +182,7 @@ func main() {
 
 //It is commonly safer to make anything that runs in a separate gorutine a proper, separate function (as opposed to a closure)
 //That way you know that in only has access to the values you pass to it.
-func slicesslope(max1, half bool, i, delay, blur int, vals, disp, slopes [][]float64, stds []float64, response func(x, y, w []float64, a bool) (float64, float64), returnsignal chan bool) {
+func slicesslope(max1, half bool, i, delay, blur, chunklen int, vals, disp, slopes [][]float64, stds []float64, response func(x, y, w []float64, a bool) (float64, float64), returnsignal chan bool) {
 	var x, y []float64
 	var beta float64
 	for j, _ := range vals {
@@ -186,7 +194,14 @@ func slicesslope(max1, half bool, i, delay, blur int, vals, disp, slopes [][]flo
 		y = vals[j]
 		if delay > 0 {
 			y = vals[j][delay+(blur/2):] //x is the delayed one, so I starts from a larger index to compensate
+			if chunklen > 0 {
+				y = chunksfory(vals[j], delay, blur, chunklen, len(disp[i]))
+			}
 			x = disp[i]
+			//This is a pretty poor sanity check, but it's something.
+			if len(x) != len(y) {
+				panic(fmt.Sprintf("x and y should have the same len, but they have lens %d and %d", len(x), len(y)))
+			}
 		}
 		// say, at the first position with delay 5 we will be comparing x[0] and y[4]
 		stdv := stds[i] //these are wrong on the delayed case, but it doesn't matter. They are only here to save time.
@@ -204,4 +219,25 @@ func slicesslope(max1, half bool, i, delay, blur int, vals, disp, slopes [][]flo
 	}
 	//this is just a signal that says "I'm done". We don't care about the actual value.
 	returnsignal <- true
+}
+
+func chunksfory(v []float64, delay, blur, chunklen int, retsize ...int) []float64 {
+	size := len(v)
+	if len(retsize) > 0 && retsize[0] > 0 {
+		size = retsize[0]
+	}
+	ret := make([]float64, 0, size)
+	currentchunk := 0
+	for j, _ := range v {
+		if j > 0 && (j)%chunklen == 0 { //the element v[j] belongs to the next chunk
+			currentchunk++
+		}
+		//I _think_ the chunklen*currentchunk part ensures that we skip anything that, with the delay,
+		//would 'cross' between trajectory chunks.
+		if j >= (chunklen*currentchunk)+delay+(blur/2) {
+			ret = append(ret, v[j])
+		}
+	}
+	return ret
+
 }

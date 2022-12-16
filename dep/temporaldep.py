@@ -106,6 +106,7 @@ p.add_argument("--di",type=int, help="Delay for the first figure",default=0)
 p.add_argument("--df",type=int, help="Delay for the last figure",default=0)
 p.add_argument("--deltad",type=int, help="Delay step between figures",default=0)
 p.add_argument("--size",type=int, help="Size for the figures, in cm. The figure is always a square",default=10)
+p.add_argument("--chunklen",type=int, help="If > 0, the trajectory is taken as formed by independent 'chunks' of chunklen frames each",default=0)
 
 p.add_argument("--blur",type=int, help="Use not the i-delay element, but the average between i-delay-(blur/2) and i-delay+(blur/2). If an odd number is given, the previous even number will be used dinstead",default=10)
 
@@ -159,8 +160,8 @@ for i in range(a.di,a.df,a.deltad):
     if a.corr:
         corr="--corr"
     if not a.skipcalc:
-        print("%s --delay %d --delayblur %s %s -out %s -c %d  GOMDDATA.dat"%(a.exec,i,a.blur,corr,name, a.cols))
-        os.system("%s --delay %d --delayblur %s %s -out %s -c %d  GOMDDATA.dat"%(a.exec,i,a.blur,corr,name, a.cols))
+        print("%s --delay %d --delayblur %s %s -out %s -c %d --chunklen %d GOMDDATA.dat"%(a.exec,i,a.blur,corr,name, a.cols, a.chunklen))
+        os.system("%s --delay %d --delayblur %s %s -out %s -c %d --chunklen %d GOMDDATA.dat"%(a.exec,i,a.blur,corr,name, a.cols, a.chunklen))
     fin=open(name,"r")
     resmatrix=np.array(json.load(fin))
     fin.close()
