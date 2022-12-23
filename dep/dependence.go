@@ -46,15 +46,15 @@ func qerr(err error) {
 func makewindow(vals [][]float64, delay, blur, chunklen int) [][]float64 {
 	ret := make([][]float64, 0, len(vals))
 	for _, v := range vals {
-		currentchunk := 0
+		firstcurrentchunk := 0
 		ret = append(ret, make([]float64, 0, len(vals)))
 		for j, _ := range v {
 			if j > 0 && chunklen > 0 && (j)%chunklen == 0 { //the element v[j] belongs to the next chunk
-				currentchunk++
+				firstcurrentchunk = j
 			}
 			//I _think_ the chunklen*currentchunk part ensures that we skip anything that, with the delay,
 			//would 'cross' between trajectory chunks.
-			if j >= (chunklen*currentchunk)+delay+(blur/2) {
+			if j >= delay+(blur/2) && j-delay+(blur/2) >= firstcurrentchunk {
 				tmp := v[j-delay-(blur/2) : j-delay+(blur/2)+1] //we get a window centered on delay, and with a width blur (or blur-1, if blur is an odd number).
 				ret[len(ret)-1] = append(ret[len(ret)-1], stat.Mean(tmp, nil))
 			}
@@ -227,14 +227,14 @@ func chunksfory(v []float64, delay, blur, chunklen int, retsize ...int) []float6
 		size = retsize[0]
 	}
 	ret := make([]float64, 0, size)
-	currentchunk := 0
+	firstcurrentchunk := 0
 	for j, _ := range v {
 		if j > 0 && (j)%chunklen == 0 { //the element v[j] belongs to the next chunk
-			currentchunk++
+			firstcurrentchunk = j
 		}
 		//I _think_ the chunklen*currentchunk part ensures that we skip anything that, with the delay,
 		//would 'cross' between trajectory chunks.
-		if j >= (chunklen*currentchunk)+delay+(blur/2) {
+		if j >= delay+(blur/2) && j-delay+(blur/2) >= firstcurrentchunk {
 			ret = append(ret, v[j])
 		}
 	}
