@@ -45,8 +45,22 @@ def add_highlights(prob_map, highs):
 
 
 #The size is given in inches for this function, but the program itelf takes cm
-def plot_maps(prob_map,name, mini=None,maxi=None,tickfreq=0,title="",odpi=600,size=4, noshow=False, highlights=""):
-    fig, ax = plt.subplots(1, 1, figsize=(size,size))
+def plot_maps(prob_map,name, mini=None,maxi=None,tickfreq=0,title="",odpi=600,size=4, noshow=False, highlights="", timed=False,printrow=-1):
+    sizex=size
+    sizey=size
+    if printrow>=0:
+        firstline=""
+        secondline=""
+        print("Printing row: %3d"%printrow)
+        for i,v in enumerate(prob_map[printrow]):
+            firstline+="%6d "%(i+1)
+            secondline+="%6.3f "%(v)
+        print(firstline)
+        print(secondline)
+    if timed:
+        prop=len(prob_map)/len(prob_map[0])
+        sizey=prop*size
+    fig, ax = plt.subplots(1, 1, figsize=(sizex,sizey))
     #We ensure that the range is symmetrical around 0
     print(mini, maxi) ##############################
     highs=parse_highlights(highlights,len(prob_map))
@@ -59,14 +73,12 @@ def plot_maps(prob_map,name, mini=None,maxi=None,tickfreq=0,title="",odpi=600,si
     ax.set_title(title)
     if tickfreq>0:
         if tickfreq<50:
-            ax.tick_params(axis='x', labelsize=4, labelrotation = 45)
-            ax.tick_params(axis='y', labelsize=5)
+            ax.tick_params(axis='x', labelsize=6, labelrotation = 45)
+            ax.tick_params(axis='y', labelsize=6)
         loc = plticker.MultipleLocator(base=tickfreq) # From stackoverflow 
         ax.xaxis.set_major_locator(loc)
-        ax.yaxis.set_major_locator(loc)
-
-    
-
+        if not timed:
+            ax.yaxis.set_major_locator(loc)
     fig.tight_layout()
     plt.savefig(name, dpi=odpi)
     if not noshow:
@@ -100,6 +112,7 @@ p.add_argument("--filter",type=float, help="filter (set to zero) any value with 
 p.add_argument("--exec",type=str, help="Full path to the dep executable",default="$GOMD/dep/dep")
 p.add_argument("--dpi",type=int, help="Resolution (in dots per inch) of the plot images",default=600)
 
+p.add_argument("--rows",type=str, help="If not empty, it must consists of 2 integers separated by spaces. In that case, only the given range of rows (first and last) are read for each json file, and plotted together. As with Python lists, negative indexes can be used to signify the N to last value",default="")
 
 p.add_argument("--filterd",type=float, help="Only print values with absolute value larger than this",default=0.1)
 p.add_argument("--di",type=int, help="Delay for the first figure",default=0)
@@ -122,10 +135,11 @@ p.add_argument("--corr",type=bool, help="Obtains correlations instead of slopes"
 p.add_argument("--det1", type=str, help="Print the correlations involving the given residues, and those given in --det2, which must be given separated by spaces, surounded by quotes o double quotes",default="")
 p.add_argument("--det2", type=str, help="Print the correlations involving the given residues, and those given in --det2, which must be given separated by spaces, surounded by quotes o double quotes",default="")
 p.add_argument("--highlights", type=str, help="A string, enclosed by \" \" and separates with spaces, of the residues to highlight in the final plot, or empty if nothing is to be highlighted",default="")
+p.add_argument("--printrow", type=int, help="If >= 0 print the numerical values for the n-1th row ",default=-1)
 
 
-p.add_argument("--min",type=float, help="Minimum in the data range, for plotting",default=1)
-p.add_argument("--max",type=float, help="Maximum in the data range, for plotting",default=-1)
+p.add_argument("--min",type=float, help="Minimum in the data range, for plotting",default=-1)
+p.add_argument("--max",type=float, help="Maximum in the data range, for plotting",default=1)
 p.add_argument("--pvalfilter",type=float, help="points with p-values lareger than this will be set to 1",default=0.01)
 
 
@@ -148,6 +162,13 @@ except:
     pass
 os.chdir(newdir)
 
+
+rows=[]
+rowsacc=[]
+if a.rows:
+    r=a.rows.split()
+    rows.append(int(r[0]))
+    rows.append(int(r[1]))
 
 
 cont=0
@@ -189,7 +210,10 @@ for i in range(a.di,a.df,a.deltad):
     plotname=name.replace(".json","%s.png"%(filtername))
     title="Delay: %d Blur %d"%(i,a.blur)
     cm2inches=0.3937
-    plot_maps(resmatrix,plotname,mini=a.min,maxi=a.max,tickfreq=a.tickfreq,title=title,odpi=a.dpi,size=a.size*cm2inches,noshow=a.noshow,highlights=a.highlights)
+    if a.rows:
+            rowsacc+=list(resmatrix[rows[0]:rows[1]])
+    else:
+        plot_maps(resmatrix,plotname,mini=a.min,maxi=a.max,tickfreq=a.tickfreq,title=title,odpi=a.dpi,size=a.size*cm2inches,noshow=a.noshow,highlights=a.highlights,printrow=a.printrow)
 
 if not a.novideo:
     if a.filter:
@@ -198,7 +222,7 @@ if not a.novideo:
         os.system("ffmpeg -framerate 2 -i '%04d.png' -s 1920x1080 -c:v libx264 out.mp4")
 os.chdir(oridir)
        
-
-
+if a.rows:
+    plot_maps(np.array(rowsacc),"%s%s_delay_%d-%d_%d_steps_%d_blur"%(corr.replace("-",""),a.rows.replace(" ","_"),a.di,a.df,a.deltad,a.blur),mini=a.min,maxi=a.max,tickfreq=a.tickfreq,title=title,odpi=a.dpi,size=a.size*cm2inches,noshow=a.noshow,highlights=a.highlights,timed=True,printrow=a.printrow)
 
 
