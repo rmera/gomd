@@ -36,6 +36,7 @@ Public License along with this program.  If not, see
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -44,6 +45,7 @@ import (
 
 	chem "github.com/rmera/gochem"
 	"github.com/rmera/gochem/align"
+	"github.com/rmera/gochem/histo"
 	"github.com/rmera/gochem/traj/amberold"
 	"github.com/rmera/gochem/traj/dcd"
 	"github.com/rmera/gochem/traj/stf"
@@ -109,7 +111,7 @@ func main() {
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage:\n  %s: [flags] task geometry.pdb trajectory.xtc selection1 selection2 ... selectionN", os.Args[0])
 		flag.PrintDefaults()
-		fmt.Fprintf(flag.CommandLine.Output(), "\nAvailable tasks:  fixgmx, stop, distance, rmsd, peratomrmsd, ramachandran, closestn, rmsf, withincutoff, rdf, shape, planesangle, interbyres, average, super")
+		fmt.Fprintf(flag.CommandLine.Output(), "\nAvailable tasks:  selectionhelp fixgmx, stop, distance, rmsd, peratomrmsd, ramachandran, closestn, rmsf, withincutoff, rdf, shape, planesangle, interbyres, average, super histo\n")
 	}
 	flag.Parse()
 	args := flag.Args()
@@ -133,10 +135,15 @@ func main() {
 		mol, err = chem.XYZFileRead(args[1])
 
 	}
+	//Martini Beads trigger the 'symbol error' which is not critical, and meaningless
+	//in the CG contest
 	if err != nil {
-		panic(err.Error())
+		if strings.Contains(err.Error(), "Couldn't guess symbol from PDB name") {
+			log.Printf("goMD: Symbol could not be guessed for one or more PDB atoms. If the structure contains coarse-grained beads, this error is meaningless. Will continue with the empty symbol for the atoms")
+		} else {
+			panic(err.Error())
+		}
 	}
-
 	//If we don't find one or more masses, we just set them all to 1.0
 	//unless you told us not to. In the latter case, whatever task that
 	//required massess wil crash.
@@ -277,6 +284,17 @@ func main() {
 		f, toclose = Super(mol, args[3:], superlist)
 		defer toclose.Close()
 		super = true
+	case "distanceshisto":
+		fmt.Println("distance histo does not take a goMD selection. Instead, the name of the backbone atom/bead for distances can be given (default 'CA'). The step and last delimitier for the histogram can be also given (default 0.1 and 16 A, respectively)")
+		var hist *histo.Matrix
+		f, hist = DistanceHistogramMatrix(mol, args[3:])
+		defer func() {
+			fil, err := os.Create("histogram.json")
+			js := json.NewEncoder(fil)
+			js.Encode(hist)
+			scu.QErr(err)
+		}()
+
 	default:
 		fmt.Println("Args:", args)
 		fmt.Println("Task parameter invalid or not present" + args[0])
