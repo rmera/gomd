@@ -51,8 +51,7 @@ func RSDF(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 	return ret
 }
 
-const epsilon 0.0001 
-
+const epsilon = 0.0001
 
 //RDF returns a function that will return
 //the RDF or MDDF (depending on the number of reference atoms)
@@ -74,16 +73,16 @@ func RDF(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 	acctmp := make([]float64, totalsteps)
 	distances := make([]float64, totalsteps)
 	r := ""
-	A:=1.0
-	B:=1.0
-	if mol.Len()>1{
-		elip,err:=solv.ElipsoidAxes(mol.Coords[0],epsilon,mol)
-		if err!=nil{
-		    panic("goMD/RDF: Error obtaining the ellipsoid of inertia:", err.Error())
+	A := 1.0
+	B := 1.0
+	if mol.Len() > 1 {
+		elip, err := solv.EllipsoidAxes(mol.Coords[0], epsilon, mol)
+		if err != nil {
+			panic("goMD/RDF: Error obtaining the ellipsoid of inertia: " + err.Error())
 		}
-		A=elip[2]/elip[0]
-		B=elip[1]/elip[0]
-    	}
+		A = elip[2] / elip[0]
+		B = elip[1] / elip[0]
+	}
 	for i, _ := range distances {
 		r = fmt.Sprintf("%s %3.5f", r, float64(i+1)*o.Step())
 	}
@@ -95,7 +94,7 @@ func RDF(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 			acc[i] = acc[i] + v //this accumulates the values over frames  //(((frames - 1) * acc[i]) + v) / frames
 			acctmp[i] = acc[i]  //this one gets resetted every frame
 		}
-		acctmp, _ = solv.MDFFromCDF(acctmp, frames,A,B, o.Step())
+		acctmp, _ = solv.MDFFromCDF(acctmp, frames, A, B, o.Step())
 		fmt.Println(r) //The distances.
 		return acctmp
 
