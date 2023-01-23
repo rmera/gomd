@@ -9,11 +9,7 @@ import (
 	"github.com/rmera/scu"
 )
 
-//InterByRes returns a list with the residues involved in an interface, on each frame. As goMD functions needs to return floats,
-//the list of residues will be in that format, but they will be integer numbers.
-//this requires the "voro" package in goChem, which is not yet in master or devel.
-//If both of the selections are from different chains, the residues from the second selection will be given as
-//negative numbers, to distinguish them from residues from the other chain and the same residue ID..
+//DistanceHistogramMatrix returns a function that obtains a distance histogram from every pair of atoms in the mol molecule that have the desired name ("CA" by default), along the trajectory. The histogram is also returned by DistanceHistogramMatrix but updated by the returned function as it goes over the trajectory.
 func DistanceHistogramMatrix(mol *chem.Molecule, args []string) (func(coord *v3.Matrix) []float64, *histo.Matrix) {
 	//	fmt.Println("Use: MDan RMSD sel1 sel2...")
 	argslen := len(args)
