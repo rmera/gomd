@@ -15,12 +15,12 @@ import (
 //RDF returns a function that will return
 //the RDF or MDDF (depending on the number of reference atoms)
 //for a set of atoms, up to the current frame.
-func RDF(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
+func RSDF(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 	//	chem.FixGromacsPDB(mol)
 	//	println("Hello from ClosestN!")
 	argslen := len(args)
 	if (argslen) < 2 {
-		panic("RDF: Need at least two arguments")
+		panic("RSDF: Need at least two arguments")
 	}
 	o := solv.DefaultOptions()
 	o.Cpus(1)
@@ -44,6 +44,58 @@ func RDF(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 			acctmp[i] = acc[i]  //this one gets resetted every frame
 		}
 		acctmp, _ = solv.MDFFromCDF(acctmp, frames, o.Step())
+		fmt.Println(r) //The distances.
+		return acctmp
+
+	}
+	return ret
+}
+
+const epsilon 0.0001 
+
+
+//RDF returns a function that will return
+//the RDF or MDDF (depending on the number of reference atoms)
+//for a set of atoms, up to the current frame.
+func RDF(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
+	//	chem.FixGromacsPDB(mol)
+	//	println("Hello from ClosestN!")
+	argslen := len(args)
+	if (argslen) < 2 {
+		panic("RDF: Need at least two arguments")
+	}
+	o := solv.DefaultOptions()
+	o.Cpus(1)
+	frames := 0
+	refindexes, residues, com := resRankInput(mol, args)
+	_ = com ////////gotta fix this
+	totalsteps := int(o.End() / o.Step())
+	acc := make([]float64, totalsteps)
+	acctmp := make([]float64, totalsteps)
+	distances := make([]float64, totalsteps)
+	r := ""
+	A:=1.0
+	B:=1.0
+	if mol.Len()>1{
+		elip,err:=solv.ElipsoidAxes(mol.Coords[0],epsilon,mol)
+		if err!=nil{
+		    panic("goMD/RDF: Error obtaining the ellipsoid of inertia:", err.Error())
+		}
+		A=elip[2]/elip[0]
+		B=elip[1]/elip[0]
+    	}
+	for i, _ := range distances {
+		r = fmt.Sprintf("%s %3.5f", r, float64(i+1)*o.Step())
+	}
+	ret := func(coord *v3.Matrix) []float64 {
+		mddf := solv.FrameUMolCRDF(coord, mol, refindexes, residues, o)
+		frames++
+		//	fmt.Println(mddf, frames) //////////
+		for i, v := range mddf {
+			acc[i] = acc[i] + v //this accumulates the values over frames  //(((frames - 1) * acc[i]) + v) / frames
+			acctmp[i] = acc[i]  //this one gets resetted every frame
+		}
+		acctmp, _ = solv.MDFFromCDF(acctmp, frames,A,B, o.Step())
 		fmt.Println(r) //The distances.
 		return acctmp
 
