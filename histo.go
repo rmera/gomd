@@ -54,8 +54,8 @@ func DistanceHistogramMatrix(mol *chem.Molecule, args []string) (func(coord *v3.
 	distvec := v3.Zeros(1)
 	var v1, v2 *v3.Matrix
 	ret := func(coord *v3.Matrix) []float64 {
-		for i, v := range backboneindex[:len(backboneindex)-1] {
-			for j, w := range backboneindex[i+1:] {
+		for i, v := range backboneindex {
+			for j, w := range backboneindex[:i] { //inefficient
 				v1 = coord.VecView(v)
 				v2 = coord.VecView(w)
 				distvec.Sub(v2, v1)
