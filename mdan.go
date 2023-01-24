@@ -36,7 +36,6 @@ Public License along with this program.  If not, see
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -285,15 +284,15 @@ func main() {
 		defer toclose.Close()
 		super = true
 	case "distanceshisto":
-		fmt.Println("distance histo does not take a goMD selection. Instead, the name of the backbone atom/bead for distances can be given (default 'CA'). The step and last delimitier for the histogram can be also given (default 0.1 and 16 A, respectively)")
+		fmt.Println("distanceshisto does not take a goMD selection. Instead, the name of the backbone atom/bead for distances can be given (default 'CA'). The step and last delimitier for the histogram can be also given (default 0.1 and 16 A, respectively)")
 		var hist *histo.Matrix
 		f, hist = DistanceHistogramMatrix(mol, args[3:])
-		defer func() {
-			fil, err := os.Create("histogram.json")
-			js := json.NewEncoder(fil)
-			js.Encode(hist)
-			scu.QErr(err)
-		}()
+		defer prochisto(hist, "distanceshisto.json")
+	case "ramahisto":
+		fmt.Println("ramahisto does not take a goMD selection.  The step and last delimitier for the histogram can be also given (default 1 and 180 deg, respectively)")
+		var hist *histo.Matrix
+		f, hist = RamachandranHistogramMatrix(mol, args[3:])
+		defer prochisto(hist, "ramachandranhisto.json")
 
 	default:
 		fmt.Println("Args:", args)
