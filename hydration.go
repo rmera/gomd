@@ -28,24 +28,30 @@ func RSDF(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 	refindexes, residues, com := resRankInput(mol, args)
 	_ = com ////////gotta fix this
 	totalsteps := int(o.End() / o.Step())
-	acc := make([]float64, totalsteps)
-	acctmp := make([]float64, totalsteps)
+	av := make([]float64, totalsteps)
+	avtmp := make([]float64, totalsteps)
+	avsq := make([]float64, totalsteps)
+	avsqtmp := make([]float64, totalsteps)
+
 	distances := make([]float64, totalsteps)
 	r := ""
 	for i, _ := range distances {
 		r = fmt.Sprintf("%s %3.5f", r, float64(i+1)*o.Step())
 	}
 	ret := func(coord *v3.Matrix) []float64 {
-		mddf := solv.FrameUMolCRDF(coord, mol, refindexes, residues, o)
+		rdf, rdfsq := solv.FrameUMolSQRDF(coord, mol, refindexes, residues, o)
 		frames++
 		//	fmt.Println(mddf, frames) //////////
-		for i, v := range mddf {
-			acc[i] = acc[i] + v //this accumulates the values over frames  //(((frames - 1) * acc[i]) + v) / frames
-			acctmp[i] = acc[i]  //this one gets resetted every frame
+		for i, v := range rdf {
+			av[i] = av[i] + v            //this accumulates the values over frames  //(((frames - 1) * acc[i]) + v) / frames
+			avtmp[i] = av[i]             //this one gets resetted every frame
+			avsq[i] = avsq[i] + rdfsq[i] //this accumulates the values over frames  //(((frames - 1) * acc[i]) + v) / frames
+			avsqtmp[i] = avsq[i]         //this one gets resetted every frame
+
 		}
-		acctmp, _ = solv.MDFFromCDF(acctmp, frames, o.Step())
+		av = solv.SQRDF2RSDF(av, avsq, frames, o.Step())
 		fmt.Println(r) //The distances.
-		return acctmp
+		return avtmp
 
 	}
 	return ret
@@ -94,7 +100,7 @@ func RDF(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 			acc[i] = acc[i] + v //this accumulates the values over frames  //(((frames - 1) * acc[i]) + v) / frames
 			acctmp[i] = acc[i]  //this one gets resetted every frame
 		}
-		acctmp, _ = solv.MDFFromCDF(acctmp, frames, A, B, o.Step())
+		acctmp, _, _ = solv.MDFFromCDF(acctmp, frames, A, B, o.Step())
 		fmt.Println(r) //The distances.
 		return acctmp
 
