@@ -98,6 +98,12 @@ def parsesel(sele):
     return filt
 
 
+def rowsorcols(rowsorcols):
+    rows=[]
+    r=rowsorcols.split()
+    rows.append(int(r[0]))
+    rows.append(int(r[1]))
+    return rows
 
 
 
@@ -113,6 +119,9 @@ p.add_argument("--exec",type=str, help="Full path to the dep executable",default
 p.add_argument("--dpi",type=int, help="Resolution (in dots per inch) of the plot images",default=600)
 
 p.add_argument("--rows",type=str, help="If not empty, it must consists of 2 integers separated by spaces. In that case, only the given range of rows (first and last) are read for each json file, and plotted together. As with Python lists, negative indexes can be used to signify the N to last value",default="")
+
+
+p.add_argument("--cols",type=str, help="If not empty, it must consists of 2 integers separated by spaces. In that case, only the given range of columns (first and last) are read for each json file, and plotted together, as rows. As with Python lists, negative indexes can be used to signify the N to last value",default="")
 
 p.add_argument("--filterd",type=float, help="Only print values with absolute value larger than this",default=0.1)
 p.add_argument("--di",type=int, help="Delay for the first figure",default=0)
@@ -163,12 +172,14 @@ except:
 os.chdir(newdir)
 
 
-rows=[]
+
 rowsacc=[]
+rows=[]
 if a.rows:
-    r=a.rows.split()
-    rows.append(int(r[0]))
-    rows.append(int(r[1]))
+     rows=rowsorcols(a.rows)
+elif a.cols:
+    rows=rowsorcols(a.cols)
+
 
 
 cont=0
@@ -211,7 +222,9 @@ for i in range(a.di,a.df,a.deltad):
     title="Delay: %d Blur %d"%(i,a.blur)
     cm2inches=0.3937
     if a.rows:
-            rowsacc+=list(resmatrix[rows[0]:rows[1]])
+        rowsacc+=list(resmatrix[rows[0]:rows[1]])
+    elif a.cols:
+        rowsacc+=list(resmatrix[:,rows[0]:rows[1]].transpose())
     else:
         plot_maps(resmatrix,plotname,mini=a.min,maxi=a.max,tickfreq=a.tickfreq,title=title,odpi=a.dpi,size=a.size*cm2inches,noshow=a.noshow,highlights=a.highlights,printrow=a.printrow)
 
@@ -222,7 +235,9 @@ if not a.novideo:
         os.system("ffmpeg -framerate 2 -i '%04d.png' -s 1920x1080 -c:v libx264 out.mp4")
 os.chdir(oridir)
        
-if a.rows:
+if a.rows or a.cols:
+    if not a.rows:
+        a.rows=a.cols
     plot_maps(np.array(rowsacc),"%s%s_delay_%d-%d_%d_steps_%d_blur"%(corr.replace("-",""),a.rows.replace(" ","_"),a.di,a.df,a.deltad,a.blur),mini=a.min,maxi=a.max,tickfreq=a.tickfreq,title=title,odpi=a.dpi,size=a.size*cm2inches,noshow=a.noshow,highlights=a.highlights,timed=True,printrow=a.printrow)
 
 
