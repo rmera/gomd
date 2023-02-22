@@ -87,6 +87,7 @@ if a.histogram:
     hist=True
     if a.cdf:
         density=False
+        cdf=True
 #End the horrible user interface
 
 
@@ -152,7 +153,7 @@ for i,val in enumerate(x):
 
             
 
-glyphs=["b-","r-","g-","m-","k-","c-","k--","b^-","ro-","g.-","c:"]    
+glyphs=["r-","b-","g-","m-","k-","c-","k--","b^-","ro-","g.-","c:"]    
 histcolors=[]
 for i,v in enumerate(glyphs):
 	histcolors.append(v[0])
@@ -212,7 +213,8 @@ plt.ylabel(prop)
 if hist:
     plt.xlabel(prop)
     plt.ylabel("Normalized frequency")
-    
+    if a.cdf:
+        plt.ylabel("Cummulative frequency")
 x2=x
 
 
@@ -226,9 +228,9 @@ for i,y in enumerate(ys):
     if a.histogram:
         print(len(x),len(y))
         if tagslist[i]!="":
-            plt.hist(y,bins="auto",histtype="step",label=tagslist[i],cumulative=cdf, density=True,color=histcolors[i])
+            plt.hist(y,bins="auto",histtype="step",label=tagslist[i],cumulative=cdf, density=density,color=histcolors[i])
         else:
-            plt.hist(y,bins="auto",histtype="step",cumulative=cdf,density=True,color=histcolors[i])
+            plt.hist(y,bins="auto",histtype="step",cumulative=cdf,density=density,color=histcolors[i])
         continue
     if  tagslist[i]!="":
         ax.plot(x2,y,glyphs[i],label=tagslist[i])
