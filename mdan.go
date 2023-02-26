@@ -261,6 +261,8 @@ func main() {
 		f, rmsf = RMSF(mol, args[3:])
 	case "peratomrmsd":
 		f = PerAtomRMSD(mol, args[3:])
+	case "perresiduermsd":
+		f = PerResidueRMSD(mol, args[3:])
 	case "ramachandran":
 		f = Ramachandran(mol, args[3:])
 	case "closestn":
@@ -284,7 +286,7 @@ func main() {
 		defer toclose.Close()
 		super = true
 	case "distanceshisto":
-		fmt.Println("distanceshisto does not take a goMD selection. Instead, the name of the backbone atom/bead for distances can be given (default 'CA'). The step and last delimitier for the histogram can be also given (default 0.1 and 16 A, respectively)")
+		fmt.Println("distanceshisto does not take a goMD selection. Instead, it takes a keyword for the type of distances to calculate: 'com' for the the inter-centroid distance between residues, 'bb' for the distance between a backbone atom. The name of the backbone atom can be given, or the function will attempt to deduce it. The step and last delimitier for the histogram can be also given (default 0.1 and 16 A, respectively)")
 		var hist *histo.Matrix
 		f, hist = DistanceHistogramMatrix(mol, args[3:])
 		defer prochisto(hist, "distanceshisto.json")
