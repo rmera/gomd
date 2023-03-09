@@ -204,7 +204,8 @@ func CentroidDistanceHistogramMatrix(mol *chem.Molecule, args []string) (func(co
 
 				for j := 0; j < len(in2[:curr]); j++ {
 					d := COMDist(coord, in2[curr], in2[j], tmpmat[curr], tmpmat[j], tmpvecs)
-					matrix.AddDataCS(curr, j, d)
+					matrix.AddData(curr, j, d) //  AddDataCS(curr, j, d) This is to make it work with an old goChem version. The uncommented call
+					//_will_ cause a data race, so is function shouldn't be used as it is now.
 				}
 				ready <- true
 			}(indexes, i, wchans, schans)

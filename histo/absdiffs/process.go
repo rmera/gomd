@@ -21,6 +21,8 @@ func main() {
 	d2 := json.NewDecoder(f2)
 	d1.Decode(M1)
 	d2.Decode(M2)
+	M1.NormalizeAll()
+	M2.NormalizeAll()
 	r, c := M2.Dims()
 	divs := M2.CopyDividers()
 	dest := histo.NewMatrix(r, c, divs)

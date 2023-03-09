@@ -277,6 +277,9 @@ func main() {
 		f = PlanesAngle(mol, args[3:])
 	case "interbyres":
 		f = InterByRes(mol, args[3:])
+	//might be just temporary. The code is actually in a file called trash.go xD
+	case "writeout":
+		f = CaptureVals(mol, args[3:])
 	case "average":
 		target = v3.Zeros(mol.Len())
 		f = Average(mol, target, &N)
