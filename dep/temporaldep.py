@@ -121,7 +121,7 @@ p.add_argument("--dpi",type=int, help="Resolution (in dots per inch) of the plot
 p.add_argument("--rows",type=str, help="If not empty, it must consists of 2 integers separated by spaces. In that case, only the given range of rows (first and last) are read for each json file, and plotted together. As with Python lists, negative indexes can be used to signify the N to last value",default="")
 
 
-p.add_argument("--cols",type=str, help="If not empty, it must consists of 2 integers separated by spaces. In that case, only the given range of columns (first and last) are read for each json file, and plotted together, as rows. As with Python lists, negative indexes can be used to signify the N to last value",default="")
+p.add_argument("--outcols",type=str, help="If not empty, it must consists of 2 integers separated by spaces. In that case, only the given range of columns (first and last) are read for each json file, and plotted together, as rows. As with Python lists, negative indexes can be used to signify the N to last value",default="")
 
 p.add_argument("--filterd",type=float, help="Only print values with absolute value larger than this",default=0.1)
 p.add_argument("--di",type=int, help="Delay for the first figure",default=0)
@@ -177,8 +177,8 @@ rowsacc=[]
 rows=[]
 if a.rows:
      rows=rowsorcols(a.rows)
-elif a.cols:
-    rows=rowsorcols(a.cols)
+elif a.outcols:
+    rows=rowsorcols(a.outcols)
 
 
 
@@ -223,7 +223,7 @@ for i in range(a.di,a.df,a.deltad):
     cm2inches=0.3937
     if a.rows:
         rowsacc+=list(resmatrix[rows[0]:rows[1]])
-    elif a.cols:
+    elif a.outcols:
         rowsacc+=list(resmatrix[:,rows[0]:rows[1]].transpose())
     else:
         plot_maps(resmatrix,plotname,mini=a.min,maxi=a.max,tickfreq=a.tickfreq,title=title,odpi=a.dpi,size=a.size*cm2inches,noshow=a.noshow,highlights=a.highlights,printrow=a.printrow)
@@ -235,9 +235,9 @@ if not a.novideo:
         os.system("ffmpeg -framerate 2 -i '%04d.png' -s 1920x1080 -c:v libx264 out.mp4")
 os.chdir(oridir)
        
-if a.rows or a.cols:
+if a.rows or a.outcols:
     if not a.rows:
-        a.rows=a.cols
+        a.rows=a.outcols
     plot_maps(np.array(rowsacc),"%s%s_delay_%d-%d_%d_steps_%d_blur"%(corr.replace("-",""),a.rows.replace(" ","_"),a.di,a.df,a.deltad,a.blur),mini=a.min,maxi=a.max,tickfreq=a.tickfreq,title=title,odpi=a.dpi,size=a.size*cm2inches,noshow=a.noshow,highlights=a.highlights,timed=True,printrow=a.printrow)
 
 
