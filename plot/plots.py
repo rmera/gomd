@@ -114,7 +114,7 @@ else:
         ys.append([])
         onlyplot.append(int(i))
 
-print(onlyplot) ################3
+
 
 
 # Here we handle the case of a second data file
