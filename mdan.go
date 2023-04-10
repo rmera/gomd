@@ -251,6 +251,8 @@ func main() {
 		f = Angle(mol, args[3:])
 	case "rmsd":
 		f = RMSD(mol, args[3:])
+	case "drmsd":
+		f = dRMSD(mol, args[3:])
 	case "rmsf":
 		f, rmsf = RMSF(mol, args[3:])
 	case "peratomrmsd":

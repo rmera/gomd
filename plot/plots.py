@@ -19,7 +19,7 @@ p.add_argument("-c",type=int, help="Columns in the gomd files, not counting the 
 p.add_argument("--tbf", type=float, help="delta time between frames, if applicable", default=1)
 p.add_argument("--xlabel", type=str, help="Label for the X axis", default="Time")
 tagsstring=p.add_argument("--tags", type=str, help="Tags for the Y axis and for each plotted thing, separated by commas",default="")
-p.add_argument("--onlyplot",type=int,help="Print only the Nth column versus the first", default=-1)
+p.add_argument("--onlyplot",type=str,help="Print only the columns given (1 for the first 'content' column) versus the first", default="")
 p.add_argument("--runav",type=int,help="Use a Running average with N-values window", default=-1)
 p.add_argument("--histogram", type=bool,help="Plot an histogram of the values", default=False)
 p.add_argument("--cdf", type=bool,help="Plot the CDF of the values, only applicable if the --histogram flag is also given"  , default=False)
@@ -87,6 +87,7 @@ if a.histogram:
     hist=True
     if a.cdf:
         density=False
+        cdf=True
 #End the horrible user interface
 
 
@@ -103,13 +104,17 @@ ys=[]
 
 
 
-
-if a.onlyplot==-1:
+onlyplot=[]
+if a.onlyplot=="":
     for i in range(a.c):
         ys.append([])
-
 else:
-    ys.append([])
+    t=a.onlyplot.split()
+    for i in t:
+        ys.append([])
+        onlyplot.append(int(i))
+
+
 
 
 # Here we handle the case of a second data file
@@ -132,11 +137,13 @@ for j,fin in enumerate(fins):
             continue
         fields=line.split()
         x[j].append(float(fields[0])*a.tbf)
+        ysindex=0
         for i,v in enumerate(fields[1:]):
-            if a.onlyplot==-1:
+            if a.onlyplot=="":
                 ys[j+i].append(float(v)*a.unitc)
-            elif (i+1)==a.onlyplot:
-                ys[0].append(float(v)*a.unitc)
+            elif (i+1) in onlyplot:
+                ys[ysindex].append(float(v)*a.unitc)
+                ysindex+=1
 
 
 x=x[0] #We assume that both files have the same amount of datapoints, 
@@ -152,7 +159,7 @@ for i,val in enumerate(x):
 
             
 
-glyphs=["b-","r-","g-","m-","k-","c-","k--","b^-","ro-","g.-","c:"]    
+glyphs=["r-","b-","g-","m-","k-","c-","k--","b^-","ro-","g.-","c:"]    
 histcolors=[]
 for i,v in enumerate(glyphs):
 	histcolors.append(v[0])
@@ -212,7 +219,8 @@ plt.ylabel(prop)
 if hist:
     plt.xlabel(prop)
     plt.ylabel("Normalized frequency")
-    
+    if a.cdf:
+        plt.ylabel("Cummulative frequency")
 x2=x
 
 
@@ -226,9 +234,9 @@ for i,y in enumerate(ys):
     if a.histogram:
         print(len(x),len(y))
         if tagslist[i]!="":
-            plt.hist(y,bins="auto",histtype="step",label=tagslist[i],cumulative=cdf, density=True,color=histcolors[i])
+            plt.hist(y,bins="auto",histtype="step",label=tagslist[i],cumulative=cdf, density=density,color=histcolors[i])
         else:
-            plt.hist(y,bins="auto",histtype="step",cumulative=cdf,density=True,color=histcolors[i])
+            plt.hist(y,bins="auto",histtype="step",cumulative=cdf,density=density,color=histcolors[i])
         continue
     if  tagslist[i]!="":
         ax.plot(x2,y,glyphs[i],label=tagslist[i])

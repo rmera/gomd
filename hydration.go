@@ -43,9 +43,8 @@ func RDF(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 			acc[i] = acc[i] + v //this accumulates the values over frames  //(((frames - 1) * acc[i]) + v) / frames
 			acctmp[i] = acc[i]  //this one gets resetted every frame
 		}
-		//NOTE: This needs fixing
-		acctmp, _, _ = solv.MDFFromCDF(acctmp, frames, o.Step(), 1, 1) //This means the function will NOT run correctly.
-		fmt.Println(r)                                                 //The distances.
+		acctmp, _, _ = solv.MDFFromCDF(acctmp, frames, 1, 1, o.Step())
+		fmt.Println(r) //The distances.
 		return acctmp
 
 	}

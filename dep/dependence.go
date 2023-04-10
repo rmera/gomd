@@ -97,9 +97,16 @@ func main() {
 	}
 	fin, err := scu.NewMustReadFile(args[0])
 	qerr(err)
-
+	//	a := 0
 	for i := fin.Next(); i != "EOF"; i = fin.Next() {
 		l := strings.Fields(i)
+		//		a++
+		//		line := scu.MustAtoi(l[0])   ///////
+		//		fmt.Println(line, a, l, i)   //////
+		//		if a != scu.MustAtoi(l[0]) { /////
+		//			log.Fatal(a, l[0], i)
+		//			panic("csm") /////////
+		//		}
 		for j, _ := range vals {
 			vals[j] = append(vals[j], mustfloat64(l[j+1])) //We skip the first "frame" column, so we count columns from 1
 		}
