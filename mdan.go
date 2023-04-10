@@ -44,6 +44,7 @@ import (
 
 	chem "github.com/rmera/gochem"
 	"github.com/rmera/gochem/align"
+	"github.com/rmera/gochem/histo"
 	"github.com/rmera/gochem/traj/amberold"
 	"github.com/rmera/gochem/traj/dcd"
 	"github.com/rmera/gochem/traj/stf"
@@ -109,7 +110,7 @@ func main() {
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage:\n  %s: [flags] task geometry.pdb trajectory.xtc selection1 selection2 ... selectionN", os.Args[0])
 		flag.PrintDefaults()
-		fmt.Fprintf(flag.CommandLine.Output(), "\nAvailable tasks:  fixgmx, stop, distance, rmsd, peratomrmsd, ramachandran, closestn, rmsf, withincutoff, rdf, shape, planesangle, interbyres, average, super")
+		fmt.Fprintf(flag.CommandLine.Output(), "\nAvailable tasks:  selectionhelp fixgmx, stop, distance, rmsd, peratomrmsd, ramachandran, closestn, rmsf, withincutoff, rdf, shape, planesangle, interbyres, average, super histo\n")
 	}
 	flag.Parse()
 	args := flag.Args()
@@ -133,10 +134,15 @@ func main() {
 		mol, err = chem.XYZFileRead(args[1])
 
 	}
+	//Martini Beads trigger the 'symbol error' which is not critical, and meaningless
+	//in the CG contest
 	if err != nil {
-		panic(err.Error())
+		if strings.Contains(err.Error(), "Couldn't guess symbol from PDB name") {
+			log.Printf("goMD: Symbol could not be guessed for one or more PDB atoms. If the structure contains coarse-grained beads, this error is meaningless. Will continue with the empty symbol for the atoms")
+		} else {
+			panic(err.Error())
+		}
 	}
-
 	//If we don't find one or more masses, we just set them all to 1.0
 	//unless you told us not to. In the latter case, whatever task that
 	//required massess wil crash.
@@ -257,6 +263,8 @@ func main() {
 		f, rmsf = RMSF(mol, args[3:])
 	case "peratomrmsd":
 		f = PerAtomRMSD(mol, args[3:])
+	case "perresiduermsd":
+		f = PerResidueRMSD(mol, args[3:])
 	case "ramachandran":
 		f = Ramachandran(mol, args[3:])
 	case "closestn":
@@ -271,6 +279,9 @@ func main() {
 		f = PlanesAngle(mol, args[3:])
 	case "interbyres":
 		f = InterByRes(mol, args[3:])
+	//might be just temporary. The code is actually in a file called trash.go xD
+	case "writeout":
+		f = CaptureVals(mol, args[3:])
 	case "average":
 		target = v3.Zeros(mol.Len())
 		f = Average(mol, target, &N)
@@ -279,6 +290,17 @@ func main() {
 		f, toclose = Super(mol, args[3:], superlist)
 		defer toclose.Close()
 		super = true
+	case "distanceshisto":
+		fmt.Println("distanceshisto does not take a goMD selection. Instead, it takes a keyword for the type of distances to calculate: 'com' for the the inter-centroid distance between residues, 'bb' for the distance between a backbone atom. The name of the backbone atom can be given, or the function will attempt to deduce it. The step and last delimitier for the histogram can be also given (default 0.1 and 16 A, respectively)")
+		var hist *histo.Matrix
+		f, hist = DistanceHistogramMatrix(mol, args[3:])
+		defer prochisto(hist, "distanceshisto.json")
+	case "ramahisto":
+		fmt.Println("ramahisto does not take a goMD selection.  The step and last delimitier for the histogram can be also given (default 1 and 180 deg, respectively)")
+		var hist *histo.Matrix
+		f, hist = RamachandranHistogramMatrix(mol, args[3:])
+		defer prochisto(hist, "ramachandranhisto.json")
+
 	default:
 		fmt.Println("Args:", args)
 		fmt.Println("Task parameter invalid or not present" + args[0])

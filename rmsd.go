@@ -41,6 +41,7 @@ import (
 
 	chem "github.com/rmera/gochem"
 	v3 "github.com/rmera/gochem/v3"
+	"github.com/rmera/scu"
 )
 
 /**********RMSD family ***********/
@@ -84,6 +85,95 @@ func RMSD(mol *chem.Molecule, args []string) func(coord *v3.Matrix) []float64 {
 			RMSDs = append(RMSDs, rmsd)
 		}
 		return RMSDs
+	}
+	return ret
+}
+
+func residueIndexes(mol chem.Atomer, args []string) [][]int {
+	argslen := len(args)
+	name := "CA"
+	allowedchains := "ALL"
+	var at *chem.Atom
+	if argslen > 1 {
+		allowedchains = args[0]
+	}
+	if argslen < 2 {
+		name = backboneName(mol)
+	} else {
+		name = args[1]
+	}
+
+	res := make([]int, 0, mol.Atom(mol.Len()-1).MolID)
+	chains := make([]string, 0, mol.Atom(mol.Len()-1).MolID)
+	for i := 0; i < mol.Len(); i++ {
+		at = mol.Atom(i)
+		if at.Name != name || (allowedchains != "ALL" && !strings.Contains(allowedchains, at.Chain)) {
+			continue
+		}
+		res = append(res, at.MolID)
+		chains = append(chains, at.Chain)
+	}
+	indexes := make([][]int, 0, len(res))
+	for i, v := range res {
+		in := chem.Molecules2Atoms(mol, []int{v}, []string{chains[i]})
+		indexes = append(indexes, in)
+	}
+	return indexes
+}
+
+func COMCompare(test, ref *v3.Matrix, indexes1, indexes2 []int, tmpt, tmpr *v3.Matrix, tmpvecs [3]*v3.Matrix) float64 {
+	var err error
+	tmpt.SomeVecs(test, indexes1)
+	tmpr.SomeVecs(ref, indexes2)
+	tmpvecs[0], err = chem.MassCenterMem(tmpt, tmpt, tmpvecs[0])
+	scu.QErr(err)
+	tmpvecs[1], err = chem.MassCenterMem(tmpr, tmpr, tmpvecs[1])
+	scu.QErr(err)
+	tmpvecs[2].Sub(tmpvecs[1], tmpvecs[0])
+	return tmpvecs[2].Norm(2)
+}
+
+//PerResidueRMSD returns a function that will return the RMSD for each residue
+//it considers up to 3 arguments: The first one is a string with all the chains to be considered
+// ex: "ABC". If not given, or the string "ALL" is given, all chains are considered. The second
+//is the name of a "backbone" atom taht is found
+//once and only once in every residue (if not given, the function will attempt to deduce it from the
+//structure). The third, if given should be the string "com", which will cause the function to obtain,
+//for each residue, the distance between the centroids of the residue in the reference and current structure.
+func PerResidueRMSD(mol *chem.Molecule, args []string) func(coord *v3.Matrix) []float64 {
+	indexes := residueIndexes(mol, args)
+	var refs, tests []*v3.Matrix
+	var com bool
+	if len(args) > 2 && args[2] == "com" {
+		com = true
+		refs = make([]*v3.Matrix, 0, len(indexes))
+		tests = make([]*v3.Matrix, 0, len(indexes))
+
+	}
+	tmps := make([]*v3.Matrix, 0, len(indexes))
+	for _, v := range indexes {
+		tmps = append(tmps, v3.Zeros(len(v)))
+		if com {
+			refs = append(refs, v3.Zeros(len(v)))
+			tests = append(tests, v3.Zeros(len(v)))
+		}
+	}
+	tmpvecs := [3]*v3.Matrix{v3.Zeros(1), v3.Zeros(1), v3.Zeros(1)}
+	ret := func(coord *v3.Matrix) []float64 {
+		var rmsd []float64
+		for i, v := range indexes {
+			if com {
+				rmsd = append(rmsd, COMCompare(coord, mol.Coords[0], v, v, tests[i], refs[i], tmpvecs))
+				continue
+			}
+			r, err := chem.MemRMSD(coord, mol.Coords[0], tmps[i], v, v)
+			if err != nil {
+				panic("PerResidueRMSD: " + err.Error())
+			}
+
+			rmsd = append(rmsd, r)
+		}
+		return rmsd
 	}
 	return ret
 }
