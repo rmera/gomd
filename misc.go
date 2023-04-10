@@ -10,6 +10,8 @@ import (
 	"github.com/rmera/scu"
 )
 
+//CaptureVals is a function that captures the values of a file and writes a pdb file with
+//the coordinates of the frame that has a value close to the reference value.
 func CaptureVals(mol *chem.Molecule, args []string) func(coord *v3.Matrix) []float64 {
 	//	fmt.Println("Use: MDan RMSD sel1 sel2...")
 	argslen := len(args)
