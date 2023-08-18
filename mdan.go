@@ -94,7 +94,7 @@ func formatLOVO(chain string, data []*align.MolIDandChain) string {
 
 }
 
-////use:  program [-skip=number -begin=number2] Task pdbname xtcname skip sel1 sel2 .... selN. Some tasks may require that N is odd that n is even.
+// //use:  program [-skip=number -begin=number2] Task pdbname xtcname skip sel1 sel2 .... selN. Some tasks may require that N is odd that n is even.
 func main() {
 	pymol := flag.Bool("pymol", false, "Only for LOVO fit. Prints a command to create a pymol selection with the residues selected by the LOVO procedure.")
 	nogmx := flag.Bool("nogmx", false, "Only for LOVO fit. Do not print a command to create a Gromacs gmx make_ndx selection with the residues selected by the LOVO procedure. (this is printed by default)")
@@ -255,6 +255,8 @@ func main() {
 		f = Distance(mol, args[3:])
 	case "angle":
 		f = Angle(mol, args[3:])
+	case "dihedral":
+		f = Dihe(mol, args[3:])
 	case "rmsd":
 		f = RMSD(mol, args[3:])
 	case "drmsd":
@@ -345,8 +347,8 @@ func centerOfMass(coord, temp *v3.Matrix, mol *chem.Molecule, indexes []int) (*v
 	return ret, err
 }
 
-//CenterOfMass returns the center of mass the atoms represented by the coordinates in geometry
-//and the masses in mass, and an error. If mass is nil, it calculates the geometric center
+// CenterOfMass returns the center of mass the atoms represented by the coordinates in geometry
+// and the masses in mass, and an error. If mass is nil, it calculates the geometric center
 func centerOfMassII(geometry *v3.Matrix, mass *mat.Dense) (*v3.Matrix, error) {
 	if geometry == nil {
 		return nil, fmt.Errorf("nil matrix to get the center of mass")
@@ -367,7 +369,7 @@ func centerOfMassII(geometry *v3.Matrix, mass *mat.Dense) (*v3.Matrix, error) {
 	return ref2, nil
 }
 
-//returns a flat64 slice of the size requested filed with ones
+// returns a flat64 slice of the size requested filed with ones
 func ones(size int) []float64 {
 	slice := make([]float64, size, size)
 	for k, _ := range slice {
@@ -393,14 +395,14 @@ func sel2nameandchain(sel string) ([]string, []string) {
 	return names, chains
 }
 
-//Language for the selection, not very sophisticated:
+// Language for the selection, not very sophisticated:
 // resIDs chain atoms
-//resID is a list of residue IDs (integers) of one residue or a sequence of several, separated by commas and/or dashes. Numbers separated by dashed indicate that all numbers
-//between the two (themselves included) are valid residue IDs that will be included.
-//atoms is a list of atom names in the PDB/AMBER convention. Only atoms in this list will be included. ALL includes every atom.
-//It the first character of atoms is an exclamation signe "!", all atoms but the ones in the list will be included.
-//If a list of atom IDs (starting from 0), separated by spaces, and starting with the word "ATOMLIST" is given, the IDs will be returned. This is useful when processing
-//a trajectory in xyz format which does not specify residues and so on.
+// resID is a list of residue IDs (integers) of one residue or a sequence of several, separated by commas and/or dashes. Numbers separated by dashed indicate that all numbers
+// between the two (themselves included) are valid residue IDs that will be included.
+// atoms is a list of atom names in the PDB/AMBER convention. Only atoms in this list will be included. ALL includes every atom.
+// It the first character of atoms is an exclamation signe "!", all atoms but the ones in the list will be included.
+// If a list of atom IDs (starting from 0), separated by spaces, and starting with the word "ATOMLIST" is given, the IDs will be returned. This is useful when processing
+// a trajectory in xyz format which does not specify residues and so on.
 func sel2atoms(mol chem.Atomer, sel string) ([]int, error) {
 	fields := strings.Fields(sel)
 	//This will be used to parse a simple atomnombre list
@@ -497,7 +499,7 @@ func Angle(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 	//	fmt.Println("Use: MDan distance sel1 sel2...")
 	argslen := len(args)
 	if (argslen)%3 != 0 {
-		panic("Distance: Always specity a number of selections that is divisible by 3")
+		panic("Distance: Always specify a number of selections that is divisible by 3")
 	}
 	com := make([]bool, 0, argslen/3) //should we use center of mass for this selection?
 	indexes := make([][]int, 0, argslen)
@@ -528,7 +530,7 @@ func Angle(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 	ret := func(coord *v3.Matrix) []float64 {
 		angles := make([]float64, 0, len(indexes)/2)
 		for i := 0; i < len(indexes); i = i + 3 { //we process them by triads
-			if com[i/3] == false { //no center of mass indication, we assume taht each selection has one atom
+			if !com[i/3] { //no center of mass indication, we assume taht each selection has one atom
 				vec1 = coord.VecView(indexes[i][0])
 				vec2 = coord.VecView(indexes[i+1][0])
 				vec3 = coord.VecView(indexes[i+2][0])
@@ -557,6 +559,75 @@ func Angle(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 			angles = append(angles, chem.Angle(a1, a2)*chem.Rad2Deg)
 		}
 		return angles
+	}
+	return ret
+}
+
+func Dihe(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
+	//	fmt.Println("Use: MDan distance sel1 sel2...")
+	argslen := len(args)
+	if (argslen)%4 != 0 {
+		panic("Distance: Always specify a number of selections that is divisible by 4")
+	}
+	com := make([]bool, 0, argslen/4) //should we use center of mass for this selection?
+	indexes := make([][]int, 0, argslen)
+	for i, v := range args {
+		s, err := sel2atoms(mol, v)
+		if err != nil {
+			panic("Distance: sel2atoms:" + err.Error())
+		}
+		indexes = append(indexes, s)
+		if i >= 3 && (i+1)%4 == 0 { //This ensure that we only check once for each angle "set" (i.e. every 3 selections)
+			//	if len(indexes[i]) > 1 || len(indexes[i-1]) > 1 || len(indexes[i-2]) > 1 {
+			if len(indexes[len(indexes)-1]) > 1 || len(indexes[len(indexes)-2]) > 1 || len(indexes[len(indexes)-3]) > 1 || len(indexes[len(indexes)-4]) > 1 {
+				com = append(com, true)
+			} else {
+				com = append(com, false)
+			}
+		}
+	}
+	//	fmt.Println(len(com), len(indexes), com, indexes) //////////////////////
+	var vec1, vec2, vec3, vec4 *v3.Matrix
+
+	var err error
+	//	fmt.Println(com) ////////////////////////////////////
+	ret := func(coord *v3.Matrix) []float64 {
+		dihedrals := make([]float64, 0, len(indexes)/2)
+		for i := 0; i < len(indexes); i = i + 4 { //we process them in groups of 4
+			if !com[i/4] { //no center of mass indication, we assume taht each selection has one atom
+				vec1 = coord.VecView(indexes[i][0])
+				vec2 = coord.VecView(indexes[i+1][0])
+				vec3 = coord.VecView(indexes[i+2][0])
+				vec4 = coord.VecView(indexes[i+3][0])
+
+			} else {
+				//	println("get to the chooopaaaaa!")
+				t1 := v3.Zeros(len(indexes[i]))
+				t2 := v3.Zeros(len(indexes[i+1]))
+				t3 := v3.Zeros(len(indexes[i+2]))
+				t4 := v3.Zeros(len(indexes[i+3]))
+
+				vec1, err = centerOfMass(coord, t1, mol, indexes[i])
+				if err != nil {
+					panic("Distance: Func: " + err.Error())
+				}
+				vec2, err = centerOfMass(coord, t2, mol, indexes[i+1])
+				if err != nil {
+					panic("Distance: Func: " + err.Error())
+				}
+				vec3, err = centerOfMass(coord, t3, mol, indexes[i+1])
+				if err != nil {
+					panic("Distance: Func: " + err.Error())
+				}
+				vec4, err = centerOfMass(coord, t4, mol, indexes[i+1])
+				if err != nil {
+					panic("Distance: Func: " + err.Error())
+				}
+
+			}
+			dihedrals = append(dihedrals, chem.Dihedral(vec1, vec2, vec3, vec4)*chem.Rad2Deg)
+		}
+		return dihedrals
 	}
 	return ret
 }
@@ -594,7 +665,7 @@ func Distance(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 		distances := make([]float64, 0, len(indexes)/2)
 		for i := 0; i < len(indexes); i = i + 2 { //we process them by pairs
 			//		fmt.Println("com", i/2, com[i/2]) ///////////////////////////////////)
-			if com[i/2] == false { //no center of mass indication, we assume taht each selection has one atom
+			if !com[i/2] { //no center of mass indication, we assume taht each selection has one atom
 				vec1 = coord.VecView(indexes[i][0])
 				vec2 = coord.VecView(indexes[i+1][0])
 			} else {
@@ -622,12 +693,12 @@ func Distance(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 
 //Finally the "heart" of goMD, mdan.
 
-//mdan takes a topology, a trajectory object and a function that must take a set of coordinates
-//and a topology and returns a slice of floats. It applies the function to each snapshot of the trajectory.
-//It then, for each snapshot, prints a line with the traj number as first field and the numbers in the returned
-//slice as second to N fields, with the fields separated by spaces.
-//the passed function should be a closure with everything necessary to obtain the desired data from each frame
-//of the trajectory.
+// mdan takes a topology, a trajectory object and a function that must take a set of coordinates
+// and a topology and returns a slice of floats. It applies the function to each snapshot of the trajectory.
+// It then, for each snapshot, prints a line with the traj number as first field and the numbers in the returned
+// slice as second to N fields, with the fields separated by spaces.
+// the passed function should be a closure with everything necessary to obtain the desired data from each frame
+// of the trajectory.
 func mdan(traj chem.Traj, ref *v3.Matrix, f func(*v3.Matrix) []float64, skip, begin, end int, super bool, superlist []int) {
 	var coords *v3.Matrix
 	lastread := -1
