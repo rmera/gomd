@@ -96,6 +96,8 @@ func formatLOVO(chain string, data []*align.MolIDandChain) string {
 
 // //use:  program [-skip=number -begin=number2] Task pdbname xtcname skip sel1 sel2 .... selN. Some tasks may require that N is odd that n is even.
 func main() {
+	frameprint := flag.String("frameprint", "", "If two numbers separated by a space (a range) are given, frames with any calculated values between that range will be written as PDB")
+
 	pymol := flag.Bool("pymol", false, "Only for LOVO fit. Prints a command to create a pymol selection with the residues selected by the LOVO procedure.")
 	nogmx := flag.Bool("nogmx", false, "Only for LOVO fit. Do not print a command to create a Gromacs gmx make_ndx selection with the residues selected by the LOVO procedure. (this is printed by default)")
 
@@ -308,7 +310,8 @@ func main() {
 		fmt.Println("Task parameter invalid or not present" + args[0])
 		os.Exit(1)
 	}
-	mdan(traj, mol.Coords[0], f, *skip, *begin, *end, super, superlist)
+	fp := molprint(mol, *frameprint)
+	mdan(traj, mol.Coords[0], f, *skip, *begin, *end, super, superlist, fp)
 
 	//Extra post processing needed by some tasks
 
@@ -699,7 +702,7 @@ func Distance(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 // slice as second to N fields, with the fields separated by spaces.
 // the passed function should be a closure with everything necessary to obtain the desired data from each frame
 // of the trajectory.
-func mdan(traj chem.Traj, ref *v3.Matrix, f func(*v3.Matrix) []float64, skip, begin, end int, super bool, superlist []int) {
+func mdan(traj chem.Traj, ref *v3.Matrix, f func(*v3.Matrix) []float64, skip, begin, end int, super bool, superlist []int, frameprint func(*v3.Matrix, []float64, int)) {
 	var coords *v3.Matrix
 	lastread := -1
 	for i := 0; ; i++ { //infinite loop, we only break out of it by using "break"  //modified for profiling
@@ -731,6 +734,7 @@ func mdan(traj chem.Traj, ref *v3.Matrix, f func(*v3.Matrix) []float64, skip, be
 		lastread = i
 		//The important part
 		numbers := f(coords)
+		frameprint(coords, numbers, i) //print selected frames
 		fields := make([]string, len(numbers)+1)
 		fields[0] = fmt.Sprintf("%7d", i+1)
 		for j, v := range numbers {
