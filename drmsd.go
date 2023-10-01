@@ -40,14 +40,16 @@ import (
 	v3 "github.com/rmera/gochem/v3"
 )
 
-//dRMSD2 returns a function to obtain the "inter-monomer" or "dimer" RMSD, for, of course
-//a molecule/protein which is at least dimeric.
-//it takes 3 selections, the first one is the superposition selection for the first monomer
-//the second is the superposition selection for the second monomer.
-//The third, is the selection for determining the RMSD of one of the monomers
+// This is the exact same function as dRMSD. I have no idea why did I copied.
+// I _suppose_ I was planning to change it, and never did. Just ignore it.
+// dRMSD2 returns a function to obtain the "inter-monomer" or "dimer" RMSD, for, of course
+// a molecule/protein which is at least dimeric.
+// it takes 3 selections, the first one is the superposition selection for the first monomer
+// the second is the superposition selection for the second monomer.
+// The third, is the selection for determining the RMSD of one of the monomers
 // (say, all alpha-carbons in that monomer).
-//The dRMSD measure attempts to determine the inter-monomer deformation/motion
-//excluding the internal deformation of each monomer.
+// The dRMSD measure attempts to determine the inter-monomer deformation/motion
+// excluding the internal deformation of each monomer.
 func dRMSD2(mol *chem.Molecule, args []string) func(coord *v3.Matrix) []float64 {
 	//	fmt.Println("Use: MDan RMSD sel1 sel2...")
 	argslen := len(args)
@@ -102,20 +104,21 @@ func dRMSD2(mol *chem.Molecule, args []string) func(coord *v3.Matrix) []float64 
 	return ret
 }
 
-//dRMSD returns a function to obtain the "inter-monomer" or "dimer" RMSD, for, of course
-//a molecule/protein which is at least dimeric.
-//it takes 3 selections, the first one is the superposition selection for the first monomer
-//the second is the superposition selection for the second monomer.
-//The third, is the selection for determining the RMSD of one of the monomers
+// dRMSD returns a function to obtain the "inter-monomer" or "dimer" RMSD, for, of course
+// a molecule/protein which is at least dimeric.
+// it takes 3 selections, the first one is the superposition selection for the first monomer
+// the second is the superposition selection for the second monomer.
+// The third, is the selection for determining the RMSD of one of the monomers
 // (say, all alpha-carbons in that monomer).
-//The dRMSD measure attempts to determine the inter-monomer deformation/motion
-//excluding the internal deformation of each monomer.
+// The dRMSD measure attempts to determine the inter-monomer deformation/motion
+// excluding the internal deformation of each monomer.
 func dRMSD(mol *chem.Molecule, args []string) func(coord *v3.Matrix) []float64 {
 	//	fmt.Println("Use: MDan RMSD sel1 sel2...")
 	argslen := len(args)
 	if argslen < 3 {
 		panic("dRMSD: Not enough arguments, need at least 3!")
 	}
+	//this is the same as the other function!
 	indexes := make([][]int, 0, argslen)
 	for _, v := range args[:3] {
 		s, err := sel2atoms(mol, v)
@@ -164,13 +167,13 @@ func dRMSD(mol *chem.Molecule, args []string) func(coord *v3.Matrix) []float64 {
 	return ret
 }
 
-//Super determines the best rotation and translations to superimpose the coords in test
-//considering only the atoms present in the slices of int slices indexes.
-//The first indexes slices will be assumed to contain test indexes and the second, template indexes.
-//If you give only one, it will be assumed to correspond to test, if test has more atoms than
-//elements on the indexes set, or templa, otherwise. If no indexes are given, all atoms on each system
-//will be superimposed. The number of atoms superimposed on both systems must be equal.
-//Super modifies the test matrix, but template and indexes are not touched.
+// Super determines the best rotation and translations to superimpose the coords in test
+// considering only the atoms present in the slices of int slices indexes.
+// The first indexes slices will be assumed to contain test indexes and the second, template indexes.
+// If you give only one, it will be assumed to correspond to test, if test has more atoms than
+// elements on the indexes set, or templa, otherwise. If no indexes are given, all atoms on each system
+// will be superimposed. The number of atoms superimposed on both systems must be equal.
+// Super modifies the test matrix, but template and indexes are not touched.
 func memSuper(test, templa, ctest, ctempla *v3.Matrix, indexes ...[]int) (*v3.Matrix, error) {
 	if len(indexes) == 0 || indexes[0] == nil || len(indexes[0]) == 0 { //If you put the date in the SECOND slice, you are just messing with me.
 		ctest = test

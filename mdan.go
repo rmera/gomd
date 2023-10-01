@@ -213,7 +213,7 @@ func main() {
 		opt.Chains(chain)
 		opt.Begin(*begin)
 		opt.Skip(*lovo)
-		fmt.Println(opt.AtomNames(), opt.Chains(), opt.Skip(), opt.LessThanRMSD()) /////////////////////
+		//	fmt.Println(opt.AtomNames(), opt.Chains(), opt.Skip(), opt.LessThanRMSD()) /////////////////////
 		fmt.Printf("# Starting LOVO calculation. You might as well go for a coffee.\n")
 		lovoret, err := align.LOVO(mol, mol.Coords[0], args[2], opt)
 		fmt.Printf("# LOVO calculation finished.\n")
