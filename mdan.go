@@ -112,7 +112,7 @@ func main() {
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage:\n  %s: [flags] task geometry.pdb trajectory.xtc selection1 selection2 ... selectionN", os.Args[0])
 		flag.PrintDefaults()
-		fmt.Fprintf(flag.CommandLine.Output(), "\nAvailable tasks:  selectionhelp fixgmx, stop, distance, rmsd, peratomrmsd, ramachandran, closestn, rmsf, withincutoff, rdf, shape, planesangle, interbyres, average, super histo\n")
+		fmt.Fprintf(flag.CommandLine.Output(), "\nAvailable tasks: selectionhelp, fixgmx, stop, distance, angle, dihedral, rmsd, drmsd, rmsf, peratomrmsd, perresiduermsd, ramachandran, closestn, withincutoff, rdf, shape, planesangle, interbyres, writeout, average, super, distanceshisto, ramahisto\n")
 	}
 	flag.Parse()
 	args := flag.Args()

@@ -2,7 +2,8 @@ module github.com/rmera/gomd
 
 go 1.21
 
-replace github.com/rmera/gochem => github.com/rmera/gochem v0.6.4-0.20231011225313-3a879af9b24f
+//replace github.com/rmera/gochem => github.com/rmera/gochem v0.6.4-0.20231011225313-3a879af9b24f
+replace github.com/rmera/gochem => /wrk/programs/github.com/rmera/gochem
 
 require (
 	github.com/rmera/gochem v0.0.0-00010101000000-000000000000
