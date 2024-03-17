@@ -4,6 +4,8 @@ github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0/go.mod h1:E/TSTwGw
 github.com/jung-kurt/gofpdf v1.0.3-0.20190309125859-24315acbbda5/go.mod h1:7Id9E/uU8ce6rXgefFLlgrJj/GYY22cpxn+r32jIOes=
 github.com/klauspost/compress v1.15.9 h1:wKRjX6JRtDdrE9qwa4b/Cip7ACOshUI4smpCQanqjSY=
 github.com/klauspost/compress v1.15.9/go.mod h1:PhcZ0MbTNciWF3rruxRgKxI5NkcHHrHUDtV4Yw2GlzU=
+github.com/rmera/gochem v0.7.0 h1:onuQLsz9VLMRWTCJSH8GpNa8RF//U8nb/FsE6aMJEmA=
+github.com/rmera/gochem v0.7.0/go.mod h1:l1YWf1VhbI38YAh1fSLRJIsdLODmjiVIaIp8fK8Nqo4=
 github.com/rmera/scu v0.1.0 h1:NkGZYBtL2ZOPCaL4naCFJ3JY4w+Y3Wh5XDhal8vlYWI=
 github.com/rmera/scu v0.1.0/go.mod h1:bud3+C6l94vgt3UEQwOd5Oo7tlcEwEojMw2G8C9jyJs=
 github.com/skelterjohn/go.matrix v0.0.0-20130517144113-daa59528eefd h1:+ZLYzP9SYC3WU9buyb9H0l9DQxqVFOCkDG8QnNBMAlA=

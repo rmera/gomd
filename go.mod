@@ -2,7 +2,6 @@ module github.com/rmera/gomd
 
 go 1.22
 
-
 require (
 	github.com/rmera/gochem v0.7.0
 	github.com/rmera/scu v0.1.0

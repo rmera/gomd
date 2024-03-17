@@ -126,7 +126,7 @@ func main() {
 	tmpf := strings.Split(args[1], ".")
 	molformat := tmpf[len(tmpf)-1]
 	var mol *chem.Molecule
-	err := fmt.Errorf("GoMD: Unrecognized format for molecule: %s", molformat)
+	err := fmt.Errorf("goMD: Unrecognized format for molecule: %s", molformat)
 	switch strings.ToLower(molformat) {
 	case "pdb":
 		mol, err = chem.PDBFileRead(args[1], false)
@@ -136,11 +136,11 @@ func main() {
 		mol, err = chem.XYZFileRead(args[1])
 
 	}
-	//Martini Beads trigger the 'symbol error' which is not critical, and meaningless
-	//in the CG contest
+	//Martini Beads trigger the 'symbol error' which is irrelevant in that context. Even if it happens in an atomistic structure, it's very unlikely to cause any problem.
+	//Note: This is already dealt with in the new versions of goChem.
 	if err != nil {
 		if strings.Contains(err.Error(), "Couldn't guess symbol from PDB name") {
-			log.Printf("goMD: Symbol could not be guessed for one or more PDB atoms. If the structure contains coarse-grained beads, this error is meaningless. Will continue with the empty symbol for the atoms")
+			log.Printf("goMD: Symbol could not be guessed for one or more PDB atoms. If the structure contains coarse-grained beads, this error is meaningless, and, in any case, it's likely irrelevant. Will continue")
 		} else {
 			panic(err.Error())
 		}
@@ -295,12 +295,12 @@ func main() {
 		defer toclose.Close()
 		super = true
 	case "distanceshisto":
-		fmt.Println("distanceshisto does not take a goMD selection. Instead, it takes a keyword for the type of distances to calculate: 'com' for the the inter-centroid distance between residues, 'bb' for the distance between a backbone atom. The name of the backbone atom can be given, or the function will attempt to deduce it. The step and last delimitier for the histogram can be also given (default 0.1 and 16 A, respectively)")
+		log.Println("distanceshisto does not take a goMD selection. Instead, it takes a keyword for the type of distances to calculate: 'com' for the the inter-centroid distance between residues, 'bb' for the distance between a backbone atom. The name of the backbone atom can be given, or the function will attempt to deduce it. The step and last delimitier for the histogram can be also given (default 0.1 and 16 A, respectively)")
 		var hist *histo.Matrix
 		f, hist = DistanceHistogramMatrix(mol, args[3:])
 		defer prochisto(hist, "distanceshisto.json")
 	case "ramahisto":
-		fmt.Println("ramahisto does not take a goMD selection.  The step and last delimitier for the histogram can be also given (default 1 and 180 deg, respectively)")
+		log.Println("ramahisto does not take a goMD selection.  The step and last delimitier for the histogram can be also given (default 1 and 180 deg, respectively)")
 		var hist *histo.Matrix
 		f, hist = RamachandranHistogramMatrix(mol, args[3:])
 		defer prochisto(hist, "ramachandranhisto.json")
