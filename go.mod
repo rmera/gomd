@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/rmera/gochem v0.7.0
-	github.com/rmera/scu v0.1.0
+	github.com/rmera/scu v0.2.0
 	gonum.org/v1/gonum v0.7.0
 )
 
