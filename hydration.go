@@ -12,7 +12,7 @@ import (
 	"github.com/rmera/scu"
 )
 
-//RDF returns a function that will return
+//RSDF returns a function that will return
 //the RDF or MDDF (depending on the number of reference atoms)
 //for a set of atoms, up to the current frame.
 func RSDF(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
@@ -26,7 +26,7 @@ func RSDF(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 	o.Cpus(1)
 	frames := 0
 	refindexes, residues, com := resRankInput(mol, args)
-	_ = com ////////gotta fix this
+	_ = com //Might want to add it later.
 	totalsteps := int(o.End() / o.Step())
 	av := make([]float64, totalsteps)
 	avtmp := make([]float64, totalsteps)
@@ -73,7 +73,7 @@ func RDF(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 	o.Cpus(1)
 	frames := 0
 	refindexes, residues, com := resRankInput(mol, args)
-	_ = com ////////gotta fix this
+	_ = com ////////Might want to add it later
 	totalsteps := int(o.End() / o.Step())
 	acc := make([]float64, totalsteps)
 	acctmp := make([]float64, totalsteps)

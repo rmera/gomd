@@ -54,6 +54,27 @@ goMD can perform several tasks, and it was designed so that the implementation o
 	./gomd [-skip=X -begin=Y] RMSD pdbname xtcname "selection1" "selection2" ... "selectionN"
 ```
 
+* PerAtomRMSD: Obtains the per-atom RSD of the given selections agains the coordinates in the reference PDB for those atoms.
+
+```	
+	./gomd [-skip=X -begin=Y] RMSD pdbname xtcname "selection" 
+```
+
+
+* PerAtomRMSD: Obtains the per-residue RSMD of the given chains agains the coordinates in the reference PDB for those residues.
+Chains are given as a single string, e.g. "ABC". If the string "ALL" is given, all chains are considered. Additionally the name of a backbone atom that is present in all residues needs to be given (e.g. "CA" for atomistic structures and "BB" for Martini 3 structures).
+
+```	
+	./gomd [-skip=X -begin=Y] RMSD pdbname xtcname "chains" "backboneatomname"
+```
+
+* dRMSD: Obtains the _dimer RMSD_, a measure of rigid-body inter-monomer motion between 2 monomers of a protein. Requires 3 selection: The superposition selection for the first monomer, the superposition selection for the second monomer (for instance, LOVO-determined selections) and a selection for determining the RMSD of either of the 2 monomers (for instance, the backbone atoms or the alpha carbons)
+
+
+```	
+	./gomd [-skip=X -begin=Y] dRMSD pdbname xtcname "supermono1" "supermono2" "RMSDmonox"
+```
+
 * ClosestN: Given a selection, plots the distances for the closest N of an also given list of residue names to the selection, for each frame.
 
 ```
@@ -173,7 +194,7 @@ for details.
 
 
 goMD, a little program for the analysis of molecular dynamics simulations.
-Copyright (c) 2017  Raul Mera Adasme.
+Copyright (c) 2024  Raul Mera Adasme.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
