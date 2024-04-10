@@ -1,0 +1,51 @@
+Before installing
+
+
+If you do not need support for the XTC trajectory format, 
+goMD doesn't have any requirement. If you do need XTC support, then the nsl library
+is needed. The also required xdrfile library is shipped
+with goMD.
+
+Installation
+
+
+Let's say you have downloaded and uncompressed the goMD package (where this file is)
+to a directory and that directory is your current directory. 
+I'll also assume the current directory is where you want to
+install goMD. If not, move all the uncompressed files to the
+installation directory.
+
+Say you your installation directory is /home/alfred/gomd
+
+Read and (if needed)  modify the gomd_config.sh file, in 
+the installation directory.  After you have done so, go 
+back to your home directory and define the required environment variables
+
+If you are using Bash:
+
+        cd
+        echo "export GOMDROOT=/home/alfred/gomd" >> .bashrc  
+        echo "source $GOMDROOT/gomd_config.sh" >> .bashrc
+ 
+If you are using zsh, the last to lines will be:
+
+        echo "export GOMDROOT=/home/alfred/gomd" >> .zshrc  
+        echo "source $GOMDROOT/gomd_config.sh" >> .zshrc
+
+
+
+After you, for Bash:
+
+        source .bashrc
+
+Or, for zsh:
+        source .zshrc
+
+goMD should be now ready to use.
+
+The binary name is "gomd". If you do not need xtc-trajectory support,
+you can use the "gomd-nox" binary.
+
+
+
+

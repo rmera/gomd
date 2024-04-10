@@ -6,7 +6,9 @@ To the long life of the Ven. Khenpo Phuntzok Tenzin Rinpoche.
 This program makes extensive use of the goChem Computational Chemistry library.
 If you use this program, we kindly ask you to support it by to citing the library as:
 
-R. Mera-Adasme, G. Savasci and J. Pesonen, "goChem, a library for computational chemistry", http://www.gochem.org.
+
+
+M. Dominguez, V.A. Jimenez, G. Savasci, R. Araya-Osorio, J. Pesonen and R. Mera-Adasme,  "goChem, a library for computational chemistry", http://www.gochem.org.
 
 The gonum library (http://www.gonum.org/) is also much used (and appreciated).
 
@@ -16,10 +18,9 @@ Plotting scripts are also included.
 
 ## Binary install
 
-Download the appropiate binary and add its location to PATH. 
-If you wish to use the xtc-enabled binary, you need to have the xdrfile 1.1 library from Gromacs installed (i.e. its location must be added to LD_LIBRARY_PATH).
+Download the package from the release page, uncompress it to the directory where you want the installation to be, and follow the indications in the INSTALL file in that directory.
 
-##  Compilation
+## Source install
 goMD works with the current release version of goChem. It also requires the silly chemical utils (github.com/rmera/scu) and, if XTC file format support is needed, the xdrfile library from Gromacs (www.gromacs.com). As it uses modules, you can simply use the following command:
 
 ```
@@ -31,171 +32,55 @@ To compile and install the program (compiling with XTC-trajectories support requ
 ## Use
 
 ```
-program [-skip=X -begin=Y] Task molfilename trajname task_specific_arguments
+gomd [-skip=X -begin=Y] task molfilename trajname task_specific_arguments
 ```
 
-The format of both the moleculefile (PDB, GRO and XYZ are supported) as well as that of the trajectory (DCD, multiPDB, multiXYZ,old-AMBER,STS and XTC are supported, XTC requires the Xdrlibrary), are determined by the respective file's extension. 
+The format of both the moleculefile (PDB, GRO and XYZ are supported) as well as that of the trajectory (DCD, multiPDB, multiXYZ,old-AMBER, and XTC are supported, XTC requires the xdrfile library), are determined by the respective file's extension. X and Y are integers.
 
 ### Tasks
 
-goMD can perform several tasks, and it was designed so that the implementation of new tasks is rather simple. The task name is **not** case-sensitive. The current tasks and their flags are:
+goMD can perform several tasks, and it was designed so that the implementation of new tasks is rather simple. The task names are **not** case-sensitive. Most of the tasks obtain a value, or a group of values (an angle, a distance, an RMSD, Ramachandran angles) for one or mor given selections on each frame of the trajectory. A detailed explanation of the tasks is given in the Wiki. The current tasks are:
 
-
-* Ramachandran: Obtains the phi and psi angles for each residue/chain pair given on each frame on the trajectory. If the RGB keyword and the number of total frames that will be read from the trajectory are given, in addition to the phi/psi pair, three more columns will be printed for each residue/chain pair: The RGB numbers for a color (0 to 255) which will progress from red to purple (the standard hue circle) with increasing frames. This is useful to plot each phi/psi with its own color and follow the proggression of them with the trajectory. A little Python tool for plotting these reults is included.
-
-```
-	./gomd  [-skip=X -begin=Y ] Ramachandran pdbname xtcname "residuename1 chain1" "residuename2 chain2" ... "residuenameN chainN" [RGB total_frames]
-```
-
-* RMSD: Obtains the RMSD of the given selections against the coordinates in the reference PDB file for those selections.
-
-```	
-	./gomd [-skip=X -begin=Y] RMSD pdbname xtcname "selection1" "selection2" ... "selectionN"
-```
-
-* PerAtomRMSD: Obtains the per-atom RSD of the given selections agains the coordinates in the reference PDB for those atoms.
-
-```	
-	./gomd [-skip=X -begin=Y] PerAtomRMSD pdbname xtcname "selection" 
-```
-
-
-* PerResidueRMSD: Obtains the per-residue RSMD of the given chains agains the coordinates in the reference PDB for those residues.
-Chains are given as a single string, e.g. "ABC". If the string "ALL" is given, all chains are considered. Additionally the name of a backbone atom that is present in all residues needs to be given (e.g. "CA" for atomistic structures and "BB" for Martini 3 structures).
-
-```	
-	./gomd [-skip=X -begin=Y] PerResidueRMSD pdbname xtcname "chains" "backboneatomname"
-```
-
-* dRMSD: Obtains the _dimer RMSD_, a measure of rigid-body inter-monomer motion between 2 monomers of a protein. Requires 3 selection: The superposition selection for the first monomer, the superposition selection for the second monomer (for instance, LOVO-determined selections) and a selection for determining the RMSD of either of the 2 monomers (for instance, the backbone atoms or the alpha carbons)
-
-
-```	
-	./gomd [-skip=X -begin=Y] dRMSD pdbname xtcname "supermono1" "supermono2" "RMSDmonox"
-```
-
-* ClosestN: Given a selection, plots the distances for the closest N of an also given list of residue names to the selection, for each frame.
-
-```
-	./gomd [-skip=X -begin=Y] ClosestN pdbname xtcname "selection" "residuename1 residuename2 residuenameM" N
-```
-
-	Where N is a positive integer. Residue names are given in 3 letter format (ASP, HIS, etc). The name for the water molecules will vary with the force-field used (SOL, HOH, WAT, etc). Distances of a residue with itself will not be considered.   
-
-
-* WithinCutoff: Similar to the previous but returns the number of residues of the type residuename1 or residuename2, etc within R Angstroms of selection in each frame.
-
-```
-	./gomd [-skip=X -begin=Y] WhithinCutoff pdbname xtcname "selection" "residuename1 residuename2 residuenameM" R
-```
-
-	Where R is a positive float. The rest of the syntax is equivalent to that for ClosestN.
-
-
-* RDF: Similar to the previous but obtains the RDF or MDDF (depending on whether the selection contains one atom, or more, respectively) for residues of the type residuename1 or residuename2, with respect to the selection "selection". Note that goMD's definition of MDDF reduces to the RDF if they selection is sphertically symmetric.
-
-```
-	./gomd [-skip=X -begin=Y] RDF  pdbname xtcname "selection" "residuename1 residuename2 residuenameM" 
-```
-
-* Distance: Obtains the distance between pairs of selections for each frame of the trajectory. 
- An even number of selections must be given. If a selection has more than one atom, the center of mass for that selection is used.
-
-```
-	./gomd [-skip=X -begin=Y] distance pdbname xtcname "selection1" "selection2" ... "selectionN" 
-```
-	
-
-* Angle: Obtains the angle between triplets of consecutive selections selections, for each frame of the trajectory.  
+1. **Ramachandran**: Obtains Ramachandran angles for one or more selections, on each frame..
+1. **RMSD**: Obtains the RMSD of the given selections vs the reference structure, on each frame.
+1. **PerAtomRMSD**: Obtains the per-atom RSD of the given selections agains the reference PDB, on each frame.
+1. **PerResidueRMSD**: Obtains the per-residue RSMD of the given chains agains the coordinates in the reference PDB, on each frame. 
+1. **dRMSD**: Obtains the _dimer RMSD_, a measure of rigid-body inter-monomer motion between 2 monomers of a protein, on each frame.
+1. **ClosestN**: Given a selection, obtains the distances for the closest N of an also given list of residue names to the selection, on each frame.
+1. **WithinCutoff**: Similar to the previous but returns the number of residues of the types given, etc within a given distance of a selection, on each frame.
+1. **RDF**: Similar to the previous but obtains the RDF (radial distribution function) or MDDF (minimal distance distribution function), depending on whether the selection contains one atom, or more, respectively, for residues of the given types, with respect to a given selection.
+1. **Distance**: Obtains the distance between pairs of selections for each frame of the trajectory. 
+1. **Angle**: Obtains the angle between triplets of consecutive selections selections, for each frame of the trajectory.  
 	The number of given selections must be a multiple of 4. .  If a selection has more than one atom, the center of mass for that selection is used.
+1. **Dihedral**: Obtains the dihedral angles between consecutive quadruplets of selections. 
+1. **Shape**: Obtains the Planarity (oblate distortion) an Elongation (prolate distorion) percentages for the selections.
+1. **PlanesAngle**: For every 2 selections, calculate the best plane passing through the atoms of each selection, and then returns the angles (in degrees) between the normal vector to each plane. An even number of selections must be given.
+1. **FixGMX**: Will print a "fixed" version a Gromacs PDB, with the chains restored, and exit. 
+1. **Super**: Superimposes the whole trajectory to the reference structure considering the atoms in selection to calculate the superposition. In order to employ the LOVO procedure, instead of defining a selection, use the *-lovo* option (see below).
+1. **Average*: Prints the average structure over the trajectory
+1. **DistancesHisto**: Obtains frequency histograms for all inter-residue distances.
+1. **RamaHisto**: Obtains frequency histograms for all Ramachandran angles int he protein, which are printed as a JSON file. **This feature/task is experimental**
+1. **InterByRes**: Takes 2 selections and, for each frame, obtains the ID for the residues in each selection that are part of the interface between both selections in that frame **This feature/task is experimental**.
 
-```
-	./gomd [-skip=X -begin=Y] angle pdbname xtcname "selection1" "selection2" "selection3" ... "selectionN" 
-```
-
-
-
-* Dihedral: Obtains the dihedral angles between consecutive quadruplets of selections (i.e. the number of selections given must be a multiple of 4. If a selection has more than one atom, the center of mass for that selection is used.
-
-```
-./gomd [-skip=X -begin=Y ] dihedral pdbname xtcname "selection1" "selection2" "selection3" "selection4" ...  "selectionN"
-```
-
-
-* Shape: Obtains the Planarity (oblate distortion) an Elongation (prolate distorion) percentages for the selections.
-
-```
-	./gomd [-skip=X -begin=Y ] Shape pdbname xtcname "selection1" "selection2" ... "selectionN" 
-```
-* PlanesAngle: For every 2 selections, calculate the best plane passing through the atoms of each selection, and then returns the angles (in degrees) between the normal vector to each plane. An even number of selections must be given.
+### Lovo
+* LOVO superposition calculation: While not strictly a task, goMD can employ LOVO ( 10.1371/journal.pone.0119264\n, 10.1186/1471-2105-8-306) to find the optimal atoms from a selection to superimpose. LOVO is invoked with the option _-lovo_ (More details in the Wiki)
 
 
-```
-	./gomd [-skip=X -begin=Y ] planesangle pdbname xtcname "selection1" "selection2" ... "selection(N-1)" "selectionN"
-```
-
-
-* FixGMX: Will print a "fixed" version a Gromacs PDB, with the chains restored, and exit. The chain identifiers will be added in the following way: The first lines will be assigned chain "A". Whenever the residue number of a residue is smaller than the residue number of a previous residue, a new chain will be assumed, which will be assigned the chain "B", and so on with "C", "D", etc.
-
-```
-	./gomd fixgmx pdbname
-```
-
-* Super: Superimposes the whole trajectory to the reference structure considering the atoms in selection to calculate the superposition. In order to employ the LOVO procedure, instead of defining a selection, use the *-lovo* option (see below).
-
-```
-	./gomd super pdbname xtcname "selection"
-```
-
-
-* Average: Prints the average structure over the trajectory
-```
-	./gomd [-skip=X -begin=Y ] average pdbname xtcname 
-```
-
-* InterByRes: Takes 2 selections and, for each frame, obtains the ID for the residues in each selection that are part of the interface between both selections in that frame, and whitespace. The residue IDs are returned as floats, but they are, of course, integer numbers. If both selections belong to different chains, the residues for the second selections need to be given as negative numbers, to avoid mixing up residues from different chains but the same residue ID. **This feature/task is experimental**.
-
-```
-	./gomd [-skip=X -begin=Y ] interByRes pdbname xtcname "selection1" "selection2"
-```
-
-* LOVO superposition calculation: While not strictly a task, goMD can employ LOVO ( 10.1371/journal.pone.0119264\n, 10.1186/1471-2105-8-306) to find the optimal atoms from a selection to superimpose. LOVO is invoked with the option 
-
-```
-./gomd -lovo N task pdbname xtcname "selection"
-```
-
-Where N is a number larger than 0, and will become the number of frames skipped during the LOVO procedure. The task will be performed afterwards. Reasonable task options are "stop" (does nothing after printing the LOVO results) and "super" (which will superimpose the whole trajectory based on the index determined in the LOVO procedure).
-	
 ### Selections: 
+Most goMD tasks work in terms of goMD selections.
 
-The selections are defined in the following way: "RESID1,RESID2,RESID3-RESID3+N,RESIDN CHAIN ATNAME1,ATNAME2"
+goMD selections are defined in the following way: "RESID1,RESID2,RESID3-RESID3+N,RESIDN CHAIN ATNAME1,ATNAME2"
 RESID are residue numbers. They can be separated by commas or, to specify a range, with dashes: 12,13,120,125-128,145  The former would select the residues 12,13,120,125,126,127,128,145
 CHAIN must be a chain identifier such as "A". If chain is "ALL", every chain will be used.
 ATNAME is a PDB atom name such as CA (alpha carbon). Hydrogen names may vary with the forcefield employed. if ALL is given, as the first atom name, all atoms in the selected residues will be consiered.
-
 
 ## Plotting the results
 
 A few Python scripts are included to help with the result visualization.
 
-* ramachandran.py is a simple script that will plot one set of Ramachandran angles (the ones in the columns 2 and 3 of the output file from gomd) along the trajectory, coloring the value for each frame in a different hue, so any conformationa change can be observed. Takes only the goMD Ramachandran output file as input.
-
-* interfaces.py plots the results of the InterByRes, as the fraction of the trajectory for which each residue in the selection is part of the interface. Use
-
-```
-interfaces.py -h
-```
-for details.
-
-
-* plots.py is a rather complete plotting tool for all the other plotting tasks. It is easy to use (for the simplest case of only 1 column of results, or 2 columns in total, it only requires the name of the file) but has a fair bit of options to customize the visualization.  It can plot only the selected columns, set the scale for the y-axis, plot an histogram for the results instead of the default results vs time plot, and more. Plots.py will ignore lines starting with "\#", "@" and "&", which allows it to plot Gromacs-produced xvg files. Use 
-```
-plots.py -h
-```
-for details.
-
-* rdf2gomd.py is a small program to put the results of the rdf task in a regular by-column goMD format, which can then be plotted with plots.py. It supports putting the results of several rdf runs as columns in the same file. It takes only the file(s) as arguments.
+1. ramachandran.py For Ramachandran angles.
+1. interfaces.py plots the results of the InterByRes
+1. plots.py for most other properties.
 
 
 
