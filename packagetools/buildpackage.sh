@@ -27,7 +27,11 @@ go build
 
 
 cp -R packagetools/xdrlib pack/
-cp -R plot pack/
+mkdir pack/plot
+cp plot/ramachandran.py pack/plot/
+cp plot/plots.py pack/plot/
+cp plot/interfaces.py pack/plot/
+cp plot/rdf2gomd.py pack/plot/
 cp packagetools/INSTALL pack/
 cp packagetools/gomd_config.sh pack/
 cp gomd pack/
