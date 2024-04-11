@@ -47,7 +47,6 @@ frame=[]
 first=True
 angles=0
 for i in fin:
-
     line=i.split()
     if first:
         n=0
