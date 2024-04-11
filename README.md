@@ -6,14 +6,12 @@ To the long life of the Ven. Khenpo Phuntzok Tenzin Rinpoche.
 This program makes extensive use of the goChem Computational Chemistry library.
 If you use this program, we kindly ask you to support it by to citing the library as:
 
-
-
 M. Dominguez, V.A. Jimenez, G. Savasci, R. Araya-Osorio, J. Pesonen and R. Mera-Adasme,  "goChem, a library for computational chemistry", http://www.gochem.org.
 
 The gonum library (http://www.gonum.org/) is also much used (and appreciated).
 
+goMD is a program that calculates  different parameters for each frame of a trajectory, printing the results to the standard output, to be plot against the frame number. It assumes very little about the structure, so both atomistic and coarse-grained (tested with Martini 3) are supported.
 
-goMD is a program that can calculate  different parameters for each frame of a trajectory, printing the results to the standard output, to be plot against the frame number.
 Plotting scripts are also included.
 
 ## Binary install
@@ -39,13 +37,13 @@ The format of both the moleculefile (PDB, GRO and XYZ are supported) as well as 
 
 ### Tasks
 
-goMD can perform several tasks, and it was designed so that the implementation of new tasks is rather simple. The task names are **not** case-sensitive. Most of the tasks obtain a value, or a group of values (an angle, a distance, an RMSD, Ramachandran angles) for one or mor given selections on each frame of the trajectory. A detailed explanation of the tasks is given in the Wiki. The current tasks are:
+goMD can perform several tasks, and it was designed so that the implementation of new tasks is rather simple. The task names are **not** case-sensitive. Most of the tasks obtain a value, or a group of values (an angle, a distance, an RMSD, Ramachandran angles) for one or mor given selections on each frame of the trajectory. A detailed explanation of each task is given in the Wiki. The current tasks are:
 
 1. **Ramachandran**: Obtains Ramachandran angles for one or more selections, on each frame..
 1. **RMSD**: Obtains the RMSD of the given selections vs the reference structure, on each frame.
+1. **RMSF**: Obtains the RMSF (root-mean square fluctuation) of the atoms in the selection, along the trajectory.
 1. **PerAtomRMSD**: Obtains the per-atom RSD of the given selections agains the reference PDB, on each frame.
 1. **PerResidueRMSD**: Obtains the per-residue RSMD of the given chains agains the coordinates in the reference PDB, on each frame. 
-1. **dRMSD**: Obtains the _dimer RMSD_, a measure of rigid-body inter-monomer motion between 2 monomers of a protein, on each frame.
 1. **ClosestN**: Given a selection, obtains the distances for the closest N of an also given list of residue names to the selection, on each frame.
 1. **WithinCutoff**: Similar to the previous but returns the number of residues of the types given, etc within a given distance of a selection, on each frame.
 1. **RDF**: Similar to the previous but obtains the RDF (radial distribution function) or MDDF (minimal distance distribution function), depending on whether the selection contains one atom, or more, respectively, for residues of the given types, with respect to a given selection.
@@ -57,9 +55,7 @@ goMD can perform several tasks, and it was designed so that the implementation o
 1. **PlanesAngle**: For every 2 selections, calculate the best plane passing through the atoms of each selection, and then returns the angles (in degrees) between the normal vector to each plane. An even number of selections must be given.
 1. **FixGMX**: Will print a "fixed" version a Gromacs PDB, with the chains restored, and exit. 
 1. **Super**: Superimposes the whole trajectory to the reference structure considering the atoms in selection to calculate the superposition. In order to employ the LOVO procedure, instead of defining a selection, use the *-lovo* option (see below).
-1. **Average*: Prints the average structure over the trajectory
-1. **DistancesHisto**: Obtains frequency histograms for all inter-residue distances.
-1. **RamaHisto**: Obtains frequency histograms for all Ramachandran angles int he protein, which are printed as a JSON file. **This feature/task is experimental**
+1. **Average**: Prints the average structure over the trajectory
 1. **InterByRes**: Takes 2 selections and, for each frame, obtains the ID for the residues in each selection that are part of the interface between both selections in that frame **This feature/task is experimental**.
 
 ### Lovo
@@ -81,7 +77,12 @@ A few Python scripts are included to help with the result visualization.
 1. ramachandran.py For Ramachandran angles.
 1. interfaces.py plots the results of the InterByRes
 1. plots.py for most other properties.
+1. rdf2gomd.py A small program to put the results of the rdf task in a regular by-column goMD format, which can then be plotted with plots.py. The last line from the output of the _rdf_ task of goMD needs to be pasted in a file, which is then fed to this script.
 
+## Undocumented features
+
+As somebody looking into the code might notice, there are a few additional features in goMD that are not found
+here or in the Wiki. The reason for that is that those features have not been properly tested yet.
 
 
 goMD, a little program for the analysis of molecular dynamics simulations.
