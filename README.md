@@ -1,5 +1,3 @@
-To the long life of the Ven. Khenpo Phuntzok Tenzin Rinpoche.
-
 # goMD, a tool for the analysis of MD trajectories.
 
 
@@ -84,6 +82,7 @@ A few Python scripts are included to help with the result visualization.
 As somebody looking into the code might notice, there are a few additional features in goMD that are not found
 here or in the Wiki. The reason for that is that those features have not been properly tested yet.
 
+## License
 
 goMD, a little program for the analysis of molecular dynamics simulations.
 Copyright (c) 2024  Raul Mera Adasme.
@@ -102,6 +101,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-
-
 The author thanks ANID for financial support under Proyecto Fondecyt N. 11160032 and N. 1200200
+
+_To the long life of the Ven. Khenpo Phuntzok Tenzin Rinpoche._
