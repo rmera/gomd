@@ -13,7 +13,7 @@ p = argparse.ArgumentParser()
 
 p.add_argument("fname", type=str, help="Input file, gomd format")
 p.add_argument("totalres", type=int, help="Total number of residues in the protein")
-p.add_argument("--co", type=int, help="Chain offset, the number of residues in the first chain, if the structure is a dimer and the residue numbers start from 1 in each chain. Note that trimers and above are not supported unless the residue numers are not restarted on each chain.", default="0")
+p.add_argument("--co", type=int, help="Chain offset, i.e. the number that should be added to the residue IDs of the second chain. Only needed if the interface you are studying is that of a dimer. In that case, it will be the number of residues in the first chain. If the interface in study is between the Nth and (N+M)th monomer, the number given should be N+M. Note that triple interfaces and above are not supported, as they would require more than 1 offset (unless the residue numers are not restarted on each chain)", default="0")
 p.add_argument("--forceyrange", type=str,help="Give two numbers separated by a space. Forces the boundary of the y axis to be twose two numbers",default="")
 a = p.parse_args()
 
@@ -36,7 +36,7 @@ if force!="":
 
 
 #The following is not very pretty, sorry about that.
-prop="Frequencia in Interface"
+prop="Frequency in Interface"
 #if you don't want to tag the different numbers, just give a "" in this option.
 
 

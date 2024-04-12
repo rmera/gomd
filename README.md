@@ -1,5 +1,7 @@
-# goMD, a tool for the analysis of MD trajectories.
+![goMD](graphics/gomd230.png)
 
+
+# goMD, a simple a tool for the analysis of MD trajectories.
 
 This program makes extensive use of the goChem Computational Chemistry library.
 If you use this program, we kindly ask you to support it by to citing the library as:
@@ -71,16 +73,13 @@ ATNAME is a PDB atom name such as CA (alpha carbon). Hydrogen names may vary wit
 ## Plotting the results
 
 A few Python scripts are included to help with the result visualization.
+More information is given in the goMD wiki, and in each program's help.
 
 1. ramachandran.py For Ramachandran angles.
 1. interfaces.py plots the results of the InterByRes
 1. plots.py for most other properties.
 1. rdf2gomd.py A small program to put the results of the rdf task in a regular by-column goMD format, which can then be plotted with plots.py. The last line from the output of the _rdf_ task of goMD needs to be pasted in a file, which is then fed to this script.
 
-## Undocumented features
-
-As somebody looking into the code might notice, there are a few additional features in goMD that are not found
-here or in the Wiki. The reason for that is that those features have not been properly tested yet.
 
 ## License
 
@@ -100,6 +99,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+The logo is derived from the Go Gopher artwork (c) Renee French, whom we gratefully
+acknowledge.
+
 
 The author thanks ANID for financial support under Proyecto Fondecyt N. 11160032 and N. 1200200
 
