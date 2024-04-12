@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version=v0.7.0
+version=v0.7.1
 XTC=1
 xtcname=""
 archi="Linux_x86-64"

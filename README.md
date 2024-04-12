@@ -8,7 +8,7 @@ If you use this program, we kindly ask you to support it by to citing the librar
 
 M. Dominguez, V.A. Jimenez, G. Savasci, R. Araya-Osorio, J. Pesonen and R. Mera-Adasme,  "goChem, a library for computational chemistry", http://www.gochem.org.
 
-The gonum library (http://www.gonum.org/) is also much used (and appreciated).
+The [gonum library](http://www.gonum.org/) is also much used (and appreciated).
 
 goMD is a program that calculates  different parameters for each frame of a trajectory, printing the results to the standard output, to be plot against the frame number. It assumes very little about the structure, so both atomistic and coarse-grained (tested with Martini 3) are supported.
 
@@ -28,6 +28,8 @@ go install github.com/rmera/gomd
 To compile and install the program (compiling with XTC-trajectories support requires the xdrfile library installed, and the "xtc" compilation tag).
 
 ## Use
+
+More details in [the wiki](https://github.com/rmera/gomd/wiki)
 
 ```
 gomd [-skip=X -begin=Y] task molfilename trajname task_specific_arguments
@@ -71,6 +73,7 @@ CHAIN must be a chain identifier such as "A". If chain is "ALL", every chain wil
 ATNAME is a PDB atom name such as CA (alpha carbon). Hydrogen names may vary with the forcefield employed. if ALL is given, as the first atom name, all atoms in the selected residues will be consiered.
 
 ## Plotting the results
+The wiki also contains more info on [this topic](https://github.com/rmera/gomd/wiki/Plotting-scripts).
 
 A few Python scripts are included to help with the result visualization.
 More information is given in the goMD wiki, and in each program's help.
