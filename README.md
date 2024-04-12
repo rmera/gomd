@@ -101,10 +101,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-The logo is derived from the Go Gopher artwork (c) Renee French, whom we gratefully
-acknowledge.
+Logo by Rocio Araya based on the Go Gopher artwork by Renee French, 
+whom we gratefully acknowledge. 
+the logo itself is under the same [CC-BY](https://creativecommons.org/licenses/by/4.0/) 
+license as the original artwork.
 
 
-The author thanks ANID for financial support under Proyecto Fondecyt N. 11160032 and N. 1200200
+The lead developer thanks ANID for financial support under 
+Fondecyt N. 11160032 and N. 1200200
 
 _To the long life of the Ven. Khenpo Phuntzok Tenzin Rinpoche._
