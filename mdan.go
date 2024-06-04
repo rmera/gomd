@@ -1,5 +1,4 @@
 /*
-To the long life of the Ven. Khenpo Phuntzok Tenzin Rinpoche.
 
 goMD a little tool for the analysis of MD trajectories.
 

@@ -110,7 +110,4 @@ the logo itself is under the same [CC-BY](https://creativecommons.org/licenses/b
 license as the original artwork.
 
 
-The lead developer thanks ANID for financial support under 
-Fondecyt N. 11160032 and N. 1200200
 
-_To the long life of the Ven. Khenpo Phuntzok Tenzin Rinpoche._

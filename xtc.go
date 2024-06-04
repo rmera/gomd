@@ -1,10 +1,9 @@
 // +build xtc
 
 /*
- * charges.go, part of Bartender
+ * xtc.go part of goMD
  *
  *
- * Copyright 2020 Raul Mera <rmera{at}usach(dot)cl>
  *
  *
  *  This program is free software; you can redistribute it and/or modify
