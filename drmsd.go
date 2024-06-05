@@ -2,10 +2,6 @@
 
 rmsd.go, part of gomd
 
-This program makes extensive use of the goChem Computational Chemistry library.
-If you use this program, we kindly ask you support it by to citing the library as:
-
-R. Mera-Adasme, G. Savasci and J. Pesonen, "goChem, a library for computational chemistry", http://www.gochem.org.
 
 
 LICENSE
@@ -39,70 +35,6 @@ import (
 	chem "github.com/rmera/gochem"
 	v3 "github.com/rmera/gochem/v3"
 )
-
-// This is the exact same function as dRMSD. I have no idea why did I copied.
-// I _suppose_ I was planning to change it, and never did. Just ignore it.
-// dRMSD2 returns a function to obtain the "inter-monomer" or "dimer" RMSD, for, of course
-// a molecule/protein which is at least dimeric.
-// it takes 3 selections, the first one is the superposition selection for the first monomer
-// the second is the superposition selection for the second monomer.
-// The third, is the selection for determining the RMSD of one of the monomers
-// (say, all alpha-carbons in that monomer).
-// The dRMSD measure attempts to determine the inter-monomer deformation/motion
-// excluding the internal deformation of each monomer.
-func dRMSD2(mol *chem.Molecule, args []string) func(coord *v3.Matrix) []float64 {
-	//	fmt.Println("Use: MDan RMSD sel1 sel2...")
-	argslen := len(args)
-	if argslen < 3 {
-		panic("dRMSD: Not enough arguments, need at least 3!")
-	}
-	indexes := make([][]int, 0, argslen)
-	for _, v := range args[:3] {
-		s, err := sel2atoms(mol, v)
-		if err != nil {
-			panic("dRMSD: sel2atoms:" + err.Error())
-		}
-		indexes = append(indexes, s)
-	}
-
-	lovo1 := new(chem.Molecule)
-	lovo1.Copy(mol)
-	lovo2 := new(chem.Molecule)
-	lovo2.Copy(mol)
-
-	refs := make([]*v3.Matrix, 0, len(indexes))
-	tests := make([]*v3.Matrix, 0, len(indexes))
-	temp := v3.Zeros(len(indexes[2]))
-	for _, v := range indexes {
-		tr := v3.Zeros(len(v))
-		tt := v3.Zeros(len(v))
-		tr.SomeVecs(lovo1.Coords[0], v) //the refs are already correctly filled
-		refs = append(refs, tr)
-		tests = append(tests, tt)
-
-	}
-	ret := func(coord *v3.Matrix) []float64 {
-		//	lovo1.Coords[0].Copy(mol.Coords[0])
-		//	lovo2.Coords[0].Copy(mol.Coords[0])
-		var err error
-		//lovoA
-		_, err = memSuper(lovo1.Coords[0], coord, refs[0], tests[0], indexes[0], indexes[0])
-		if err != nil {
-			panic("super: " + err.Error())
-		}
-		//lovoB
-		_, err = memSuper(lovo2.Coords[0], coord, refs[1], tests[1], indexes[1], indexes[1])
-		if err != nil {
-			panic("super: " + err.Error())
-		}
-		tests[2].SomeVecs(lovo1.Coords[0], indexes[2])
-		refs[2].SomeVecs(lovo2.Coords[0], indexes[2])
-
-		rmsd, err := memRMSD(tests[2], refs[2], temp)
-		return []float64{rmsd}
-	}
-	return ret
-}
 
 // dRMSD returns a function to obtain the "inter-monomer" or "dimer" RMSD, for, of course
 // a molecule/protein which is at least dimeric.

@@ -69,7 +69,6 @@ func COMDist(coord *v3.Matrix, indexes1, indexes2 []int, tmp1, tmp2 *v3.Matrix, 
 	tmpvecs[1], err = chem.MassCenterMem(tmp2, tmp2, tmpvecs[1])
 	scu.QErr(err)
 	tmpvecs[2].Sub(tmpvecs[1], tmpvecs[0])
-	//fmt.Println(tmp1, tmp2, tmpvecs, indexes1, indexes2, tmpvecs[2].Norm(2)) //////////////////
 	return tmpvecs[2].Norm(2)
 }
 
@@ -85,7 +84,6 @@ func COMDistPar(coord *v3.Matrix, indexes1, indexes2 []int) float64 {
 	tmpvecs[1], err = chem.MassCenterMem(tmp2, tmp2, tmpvecs[1])
 	scu.QErr(err)
 	tmpvecs[2].Sub(tmpvecs[1], tmpvecs[0])
-	//fmt.Println(tmp1, tmp2, tmpvecs, indexes1, indexes2, tmpvecs[2].Norm(2)) //////////////////
 	return tmpvecs[2].Norm(2)
 }
 
@@ -165,13 +163,6 @@ func CentroidDistanceHistogramMatrix(mol *chem.Molecule, args []string) (func(co
 		in := chem.Molecules2Atoms(mol, []int{v}, []string{chains[i]})
 		indexes = append(indexes, in)
 	}
-	/*
-		tmpmat := make([]*v3.Matrix, 0, len(indexes))
-		for _, v := range indexes {
-			tmpmat = append(tmpmat, v3.Zeros(len(v)))
-		}
-		tmpvecs := [3]*v3.Matrix{v3.Zeros(1), v3.Zeros(1), v3.Zeros(1)}
-	*/
 	//this will be the matrix's rows and cols
 	Nres := len(indexes)
 	//now the dividers
@@ -204,18 +195,10 @@ func CentroidDistanceHistogramMatrix(mol *chem.Molecule, args []string) (func(co
 
 				for j := 0; j < len(in2[:curr]); j++ {
 					d := COMDist(coord, in2[curr], in2[j], tmpmat[curr], tmpmat[j], tmpvecs)
-					matrix.AddData(curr, j, d) //  AddDataCS(curr, j, d) This is to make it work with an old goChem version. The uncommented call
-					//_will_ cause a data race, so is function shouldn't be used as it is now.
+					matrix.AddData(curr, j, d)
 				}
 				ready <- true
 			}(indexes, i, wchans, schans)
-			/*
-				if len(wchans) >= 10 {
-					for len(wchans) > 0 {
-						<-wchans
-					}
-				}
-			*/
 			if len(schans) >= goruts {
 				for len(schans) > 0 {
 					<-schans

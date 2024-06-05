@@ -41,7 +41,6 @@ func RSDF(mol *chem.Molecule, args []string) func(*v3.Matrix) []float64 {
 	ret := func(coord *v3.Matrix) []float64 {
 		rdf, rdfsq := solv.FrameUMolSQRDF(coord, mol, refindexes, residues, o)
 		frames++
-		//	fmt.Println(mddf, frames) //////////
 		for i, v := range rdf {
 			av[i] = av[i] + v            //this accumulates the values over frames  //(((frames - 1) * acc[i]) + v) / frames
 			avtmp[i] = av[i]             //this one gets resetted every frame
